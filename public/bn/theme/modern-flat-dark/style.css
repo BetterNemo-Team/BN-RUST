@@ -1,0 +1,576 @@
+/* ==============================
+   现代扁平暗色主题 - Modern Flat Dark
+   纯色扁平设计，暗色护眼
+   ============================== */
+
+:root {
+  --mfd-bg: #111111;
+  --mfd-surface: #1a1a1a;
+  --mfd-surface-alt: #252525;
+  --mfd-border: #333333;
+  --mfd-text: #e0e0e0;
+  --mfd-text-dim: #888888;
+  --mfd-accent: #4a9eff;
+  --mfd-accent-alt: #7bb8ff;
+  --mfd-hover: #2a2a2a;
+  --mfd-scrollbar: #444444;
+  --mfd-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* 隐藏不需要的元素 */
+#__vconsole {
+    display: none !important;
+}
+
+div.blocklyTreeNode:has(#advanced) {
+    display: none !important;
+}
+
+div.blocklyWidgetDiv > div.dropdown-triangle.lower,
+div.blocklyWidgetDiv > div.dropdown-triangle.upper {
+    display: none !important;
+}
+
+svg.blocklySvgCopy {
+    display: none;
+}
+
+/* ----- Blockly 工作区背景 ----- */
+svg.blocklySvg {
+    background-color: var(--mfd-bg) !important;
+}
+
+/* 工作区网格线 */
+.blocklyMainBackground {
+    fill: var(--mfd-bg) !important;
+}
+
+svg.blocklySvg > g > g > line.blocklyGridLine {
+    stroke: rgba(255, 255, 255, 0.03) !important;
+    stroke-width: 1 !important;
+}
+
+/* 滚动条变色 */
+.blocklyScrollbarHandle {
+    fill: var(--mfd-scrollbar) !important;
+    rx: 4;
+}
+
+.blocklyScrollbarBackground:hover + .blocklyScrollbarHandle,
+.blocklyScrollbarHandle:hover {
+    fill: var(--mfd-text-dim) !important;
+}
+
+/* ----- 左侧工具箱 ----- */
+div.blocklyToolboxDiv {
+    background-color: var(--mfd-surface) !important;
+    border-right: 1px solid var(--mfd-border);
+}
+
+.blocklyToolboxDiv .blocklyTreeRoot .blocklyTreeNode .blocklyTreeRow {
+    background: var(--mfd-surface-alt) !important;
+    border: 1px solid var(--mfd-border) !important;
+    border-radius: 6px !important;
+    margin: 4px 6px;
+    height: 36px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.blocklyToolboxDiv .blocklyTreeRoot .blocklyTreeNode .blocklyTreeRow:hover {
+    background: var(--mfd-hover) !important;
+    border-color: var(--mfd-accent) !important;
+}
+
+.blocklyToolboxDiv .blocklyTreeRoot .blocklyTreeNode .blocklyTreeRow.blocklyTreeSelected {
+    background: var(--mfd-accent) !important;
+    border-color: var(--mfd-accent) !important;
+}
+
+.blocklyToolboxDiv .blocklyTreeRoot .blocklyTreeNode .blocklyTreeRow.blocklyTreeSelected .blocklyTreeIcon {
+    filter: brightness(2);
+}
+
+/* 工具箱图标的SVG颜色 */
+.blocklyToolboxDiv .blocklyTreeRoot .blocklyTreeNode .blocklyTreeRow .blocklyTreeIcon {
+    fill: var(--mfd-text-dim) !important;
+    color: var(--mfd-text-dim) !important;
+}
+
+.blocklyToolboxDiv .blocklyTreeRoot .blocklyTreeNode .blocklyTreeRow.blocklyTreeSelected .blocklyTreeIcon {
+    fill: #fff !important;
+    color: #fff !important;
+}
+
+.blocklyToolboxDiv .blocklyTreeRoot .blocklyTreeNode .blocklyTreeRow .blocklyTreeRowLabel {
+    color: var(--mfd-text) !important;
+}
+
+.blocklyToolboxDiv .blocklyTreeRoot .blocklyTreeNode .blocklyTreeRow.blocklyTreeSelected .blocklyTreeRowLabel {
+    color: #fff !important;
+}
+
+/* ----- 右侧悬浮块 (Flyout) ----- */
+svg.blocklyFlyout {
+    background: var(--mfd-surface) !important;
+    border: 1px solid var(--mfd-border) !important;
+    border-radius: 8px;
+    box-shadow: var(--mfd-shadow);
+}
+
+svg.blocklyFlyout > path.blocklyFlyoutBackground {
+    fill: var(--mfd-surface) !important;
+}
+
+/* Flyout 内部积木 */
+svg.blocklyFlyout .blocklyDraggable {
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
+}
+
+/* Flyout 标题 */
+.blocklyFlyoutLabelText {
+    fill: var(--mfd-text) !important;
+    font-weight: 600 !important;
+}
+
+/* Flyout 分隔线 */
+.blocklyFlyoutLine {
+    stroke: var(--mfd-border) !important;
+    stroke-width: 1 !important;
+}
+
+/* Flyout 加号和配置按钮 */
+div.flyout_add_btn,
+div.flyout_config_btn {
+    background: var(--mfd-surface-alt) !important;
+    border: 1px solid var(--mfd-border) !important;
+    border-radius: 6px !important;
+    color: var(--mfd-text);
+    transition: all 0.15s ease;
+}
+
+div.flyout_add_btn:hover,
+div.flyout_config_btn:hover {
+    background: var(--mfd-hover) !important;
+    border-color: var(--mfd-accent) !important;
+}
+
+/* ----- 下拉菜单 ----- */
+div.blocklyDropdownMenu {
+    background: var(--mfd-surface) !important;
+    border: 1px solid var(--mfd-border) !important;
+    border-radius: 8px !important;
+    padding: 6px;
+    box-shadow: var(--mfd-shadow);
+}
+
+div.blocklyDropdownMenu div.menu-item {
+    color: var(--mfd-text) !important;
+    background: transparent !important;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 2px 0;
+    transition: all 0.15s ease;
+}
+
+div.blocklyDropdownMenu div.menu-item:hover {
+    background: var(--mfd-hover) !important;
+}
+
+div.blocklyDropdownMenu div.menu-item.menu_item_selected {
+    background: var(--mfd-accent) !important;
+    border-color: var(--mfd-accent) !important;
+    color: #fff !important;
+}
+
+/* 下拉菜单的勾选图标 */
+div.blocklyDropdownMenu div.menu-item .menu_icon {
+    fill: var(--mfd-text) !important;
+}
+
+div.blocklyDropdownMenu div.menu-item.menu_item_selected .menu_icon {
+    fill: #fff !important;
+}
+
+/* ----- 参数输入框 (Blockly 字段) ----- */
+.blocklyEditableText:hover > rect {
+    stroke: var(--mfd-accent) !important;
+    stroke-width: 1.5 !important;
+}
+
+.blocklyEditableText > rect {
+    fill: var(--mfd-surface-alt) !important;
+    stroke: var(--mfd-border) !important;
+}
+
+.blocklyEditableText > text {
+    fill: var(--mfd-text) !important;
+}
+
+/* 数字输入框 */
+.blocklyEditableText > .blocklyNumberPad {
+    background: var(--mfd-surface) !important;
+    border: 1px solid var(--mfd-border) !important;
+    border-radius: 8px !important;
+}
+
+/* 警告指示器 */
+.blocklyWarningIcon {
+    fill: #f9e2af !important;
+}
+
+/* ----- 工具错误提示 ----- */
+.flyout-toolbox-error {
+    fill: none;
+    font-size: 13px;
+    color: #f38ba8;
+    line-height: 14px;
+}
+
+.flyout-toolbox-error > text.blocklyText {
+    fill: #f38ba8 !important;
+}
+
+.flyout-toolbox-title > text.blocklyText {
+    fill: var(--mfd-accent-alt) !important;
+    font-weight: 600 !important;
+}
+
+/* ----- 工作区积木阴影 ----- */
+.blocklyDraggable {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+}
+
+/* 选中积木高亮 */
+.blocklySelected > .blocklyPath {
+    stroke: var(--mfd-accent) !important;
+    stroke-width: 2 !important;
+}
+
+/* 插入标记 */
+.blocklyInsertionMarker > .blocklyPath {
+    fill: rgba(137, 180, 250, 0.15) !important;
+    stroke: var(--mfd-accent) !important;
+}
+
+/* 连接提示 */
+.blocklyHighlightedConnectionPath {
+    stroke: var(--mfd-accent) !important;
+}
+
+/* 替换标记 */
+.blocklyReplaceable > .blocklyPath {
+    fill: rgba(249, 226, 175, 0.15) !important;
+    stroke: #f9e2af !important;
+}
+
+/* ----- 悬浮球 ----- */
+.float-ball {
+    position: fixed;
+    width: 40px;
+    height: 40px;
+    background: var(--mfd-accent);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(137, 180, 250, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    touch-action: manipulation;
+    right: 100px;
+    bottom: 100px;
+}
+
+.float-ball.hide {
+    display: none !important;
+}
+
+.float-ball:active {
+    transform: scale(0.92);
+}
+
+.float-ball.active {
+    background: var(--mfd-accent-alt);
+}
+
+.float-ball i {
+    color: #fff;
+    font-size: 20px;
+    pointer-events: none;
+}
+
+.float-ball.active i {
+    transform: rotate(45deg);
+}
+
+/* ----- 悬浮窗 ----- */
+.float-window {
+    position: fixed;
+    width: 260px;
+    max-width: 90vw;
+    background: var(--mfd-surface);
+    border: 1px solid var(--mfd-border);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 100000;
+    opacity: 0;
+    transform: scale(0.9);
+    transition: all 0.2s ease;
+    pointer-events: none;
+    overflow: hidden;
+    right: 120px;
+    bottom: 120px;
+}
+
+.float-window.active {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: all;
+}
+
+/* 悬浮窗标题栏 */
+.window-header {
+    background: var(--mfd-surface-alt);
+    border-bottom: 1px solid var(--mfd-border);
+    color: var(--mfd-text);
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.window-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--mfd-text);
+}
+
+.window-header h3 i {
+    color: var(--mfd-accent);
+    margin-right: 6px;
+}
+
+/* 关闭按钮 */
+.close-btn {
+    background: transparent;
+    border: none;
+    color: var(--mfd-text-dim);
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.close-btn:hover {
+    background: var(--mfd-hover);
+    color: var(--mfd-text);
+}
+
+/* 悬浮窗内容区 */
+.window-content {
+    padding: 14px;
+    max-height: 70vh;
+    overflow-y: auto;
+    background: var(--mfd-surface);
+}
+
+/* 菜单项标题 */
+.bn-menu-item.menu-title {
+    background: var(--mfd-surface-alt);
+    padding: 6px 12px;
+    border-radius: 4px;
+    color: var(--mfd-accent-alt);
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 8px;
+    border: 1px solid var(--mfd-border);
+}
+
+/* 普通菜单按钮 */
+.bn-menu-item {
+    padding: 8px 14px;
+    margin-bottom: 8px;
+    background: var(--mfd-surface-alt);
+    border: 1px solid var(--mfd-border);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: var(--mfd-text);
+}
+
+.bn-menu-item:hover {
+    border-color: var(--mfd-accent);
+    background: var(--mfd-hover);
+}
+
+.bn-menu-item:active {
+    transform: translateY(1px);
+}
+
+.bn-menu-item i {
+    color: var(--mfd-accent);
+    font-size: 15px;
+    width: 20px;
+    text-align: center;
+}
+
+.bn-menu-item span {
+    color: var(--mfd-text);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* 输入框组 */
+li.bn-menu-input {
+    color: var(--mfd-text);
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    list-style: none;
+}
+
+li.bn-menu-input > input[type="text"],
+li.bn-menu-input > input[type="number"] {
+    color: var(--mfd-text);
+    background: var(--mfd-surface-alt);
+    border: 1px solid var(--mfd-border);
+    border-right: none;
+    padding: 7px 12px;
+    border-radius: 4px 0 0 4px;
+    font-size: 13px;
+    width: 100px;
+    height: 34px;
+    box-sizing: border-box;
+    transition: all 0.15s ease;
+    outline: none;
+}
+
+li.bn-menu-input > input:focus {
+    border-color: var(--mfd-accent);
+}
+
+li.bn-menu-input > select {
+    font-size: 13px;
+    height: 34px;
+    background: var(--mfd-surface-alt);
+    color: var(--mfd-text);
+    border-radius: 4px 0 0 4px;
+    border: 1px solid var(--mfd-border);
+    border-right: none;
+    padding: 0 10px;
+    transition: all 0.15s ease;
+    outline: none;
+}
+
+li.bn-menu-input > select:focus {
+    border-color: var(--mfd-accent);
+}
+
+li.bn-menu-input > button {
+    background: var(--mfd-surface-alt);
+    border: 1px solid var(--mfd-border);
+    border-left: none;
+    border-radius: 0 4px 4px 0;
+    height: 34px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--mfd-text);
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+li.bn-menu-input > button:hover {
+    background: var(--mfd-hover);
+    border-color: var(--mfd-accent);
+    color: var(--mfd-accent);
+}
+
+/* 状态信息行 */
+.status-info {
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    color: var(--mfd-text-dim);
+    font-size: 13px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--mfd-border);
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--mfd-scrollbar);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--mfd-text-dim);
+}
+
+/* 选择颜色菜单 */
+.blocklyWidgetDiv .blocklyDropDownDiv {
+    background: var(--mfd-surface) !important;
+    border: 1px solid var(--mfd-border) !important;
+    border-radius: 8px !important;
+    box-shadow: var(--mfd-shadow) !important;
+}
+
+.blocklyWidgetDiv .blocklyDropDownDiv .goog-menuitem {
+    color: var(--mfd-text) !important;
+}
+
+.blocklyWidgetDiv .blocklyDropDownDiv .goog-menuitem:hover {
+    background: var(--mfd-hover) !important;
+}
+
+.blocklyWidgetDiv .blocklyDropDownDiv .goog-menuitem-highlight {
+    background: var(--mfd-accent) !important;
+    color: #fff !important;
+}
+
+/* 字段标签 */
+.blocklyText {
+    fill: var(--mfd-text) !important;
+}
+
+/* 字段下拉箭头 */
+.blocklyArrowDropdownButton {
+    fill: var(--mfd-text-dim) !important;
+}
+
+.blocklyArrowDropdownButton:hover {
+    fill: var(--mfd-accent) !important;
+}
+
+/* 复选框 */
+.blocklyCheckbox {
+    fill: var(--mfd-surface-alt) !important;
+    stroke: var(--mfd-border) !important;
+}
+
+.blocklyCheckbox.checked {
+    fill: var(--mfd-accent) !important;
+    stroke: var(--mfd-accent) !important;
+}

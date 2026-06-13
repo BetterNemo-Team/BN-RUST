@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BN Player</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            animation: float 12s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 0.3;
+            }
+
+            25% {
+                transform: translate(100px, -100px) scale(1.2);
+                opacity: 0.6;
+            }
+
+            50% {
+                transform: translate(-150px, -200px) scale(0.8);
+                opacity: 0.4;
+            }
+
+            75% {
+                transform: translate(200px, -300px) scale(1.1);
+                opacity: 0.7;
+            }
+
+            100% {
+                transform: translate(0, 0) scale(1);
+                opacity: 0.3;
+            }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 3rem 0;
+        }
+
+        .logo {
+            width: 280px;
+            height: auto;
+            margin: 0 auto 1.5rem;
+            /* animation: logoBounce 4s infinite alternate ease-in-out; */
+        }
+
+        /* @keyframes logoBounce {
+            from { transform: translateY(0) rotate(0deg); }
+            to { transform: translateY(-15px) rotate(2deg); }
+        } */
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, #00b4d8, #90e0ef, #caf0f8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h2 {
+            font-size: 1.6rem;
+            margin-bottom: 1rem;
+            color: #90e0ef;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #a8dadc;
+            margin-bottom: 2rem;
+        }
+
+        p {
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 0.8rem 1.5rem;
+            border: 2px solid #00b4d8;
+            background: transparent;
+            color: #00b4d8;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .tab-btn:hover,
+        .tab-btn.active {
+            background: #00b4d8;
+            color: #03045e;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 180, 216, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+            margin-left: 5rem;
+            margin-right: 5rem;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .warning-box {
+            background: rgba(255, 107, 107, 0.15);
+            border-left: 4px solid #ff6b6b;
+            padding: 1.2rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        .info-box {
+            background: rgba(144, 224, 239, 0.15);
+            border-left: 4px solid #90e0ef;
+            padding: 1.2rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        .download-section {
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .download-btn {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            background: linear-gradient(90deg, #00b4d8, #0077b6);
+            color: #fff;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(0, 180, 216, 0.3);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 180, 216, 0.4);
+        }
+
+        .doc-link {
+            color: #90e0ef;
+            text-decoration: none;
+            border-bottom: 1px dashed #90e0ef;
+            transition: all 0.3s ease;
+        }
+
+        .doc-link:hover {
+            color: #00b4d8;
+            border-bottom-color: #00b4d8;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: #a8dadc;
+            font-size: 0.9rem;
+        }
+
+        .faq-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .faq-table th,
+        .faq-table td {
+            padding: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .faq-table th {
+            background: rgba(0, 180, 216, 0.2);
+        }
+
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-yes {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+        }
+
+        .status-no {
+            background: rgba(244, 67, 54, 0.2);
+            color: #f44336;
+        }
+
+        .status-dev {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+        }
+
+        input[type="number"] {
+            padding: 0.8rem 1.2rem;
+            border: 2px solid rgba(0, 180, 216, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            border-radius: 10px;
+            font-size: 1rem;
+            width: 250px;
+            transition: all 0.3s ease;
+            outline: none;
+            backdrop-filter: blur(10px);
+        }
+
+        input[type="number"]:focus {
+            border-color: #00b4d8;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 180, 216, 0.3);
+        }
+
+        input[type="number"]::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* 移除数字输入框的默认箭头 */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-animation">
+        <div class="particle" style="width: 80px; height: 80px; top: 10%; left: 10%; animation-delay: 0s;"></div>
+        <div class="particle" style="width: 60px; height: 60px; top: 60%; left: 80%; animation-delay: 2s;"></div>
+        <div class="particle" style="width: 100px; height: 100px; top: 30%; left: 70%; animation-delay: 4s;"></div>
+        <div class="particle" style="width: 40px; height: 40px; top: 80%; left: 20%; animation-delay: 6s;"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <img src="https://s41.ax1x.com/2026/02/21/pZXj0Mt.png" alt="BetterNemo Logo" class="logo">
+            <h1>BN Player </h1>
+            <!-- <p class="subtitle"></p> -->
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="intro">介绍</button>
+            <button class="tab-btn" data-tab="download">文档</button>
+            <button class="tab-btn" data-tab="try">体验</button>
+        </div>
+
+        <div class="tab-content active" id="intro">
+            <h2>什么是 BN Player</h2>
+            <p>为BetterNemo作品查看提供支持的Nemo第三方Player</p>
+
+            <div class="warning-box">
+                <strong>注意：</strong>
+                <p>BN Player为BetterNemo的子项目，正在 Indev 阶段，不代表最终质量</p>
+            </div>
+
+            <!-- <div class="info-box">
+                <strong>ℹ️ 知识库说明：</strong>
+                <p>本知识库是向创作者提供的 BetterNemo 帮助手册，部分内容由编程猫的创作者们征集汇编而成。感谢这些特别创作者的无私贡献，希望更多的创作者能在编程猫度过一段愉快的时光！</p>
+            </div> -->
+        </div>
+
+
+        <div class="tab-content" id="download">
+            <h2>文档</h2>
+            <p>📖 BetterNemo 文档：<a href="https://better-nemo.feishu.cn/wiki/HH4kwHOoJihAVLkEIDacNawKnMf"
+                    class="doc-link" target="_blank">BetterNemo 帮助手册</a></p>
+            <p>💻 BetterNemo 仓库：<a href="https://gitee.com/oldsquaw/better-nemo" class="doc-link" target="_blank">Gitee:
+                    oldsquaw/better-nemo</a></p>
+            <p>💬 官方 QQ 群：1083164353</p>
+        </div>
+
+        <div class="tab-content" id="try">
+            <h2>体验</h2>
+            <p>输入作品ID</p>
+            <input type="number" name="work-id" id="work-id" style="margin-bottom: 10px;">
+            <br>
+            <button id="play-btn" class="tab-btn"
+                onclick="window.location.href = `https://bn-p.pages.dev/player/?player=${document.getElementById('work-id').value}`">运行</button>
+        </div>
+
+        <footer>
+            <p id="cr"></p>
+        </footer>
+    </div>
+
+    <script>
+        const PLAYER = (new URLSearchParams(window.location.search)).get('player');
+        if (PLAYER)
+            window.location.href = `https://bn-p.pages.dev/player/?player=${PLAYER}`
+        document.getElementById('cr').innerHTML = '© ' + new Date().getFullYear() + ' BetterNemo 开发团队';
+        const tabs = document.querySelectorAll('.tabs > .tab-btn');
+        const contents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const target = tab.dataset.tab;
+                tabs.forEach(t => t.classList.remove('active'));
+                contents.forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(target).classList.add('active');
+            });
+        });
+    </script>
+</body>
+
+</html>

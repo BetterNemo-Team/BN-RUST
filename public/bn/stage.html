@@ -1,0 +1,122 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0" />
+    <title>BetterNemo - 舞台</title>
+    <link rel="stylesheet" href="fa.min.css" />
+    <script src="bs.js"></script>
+    <script src="touchEmulator.js"></script>
+    <script>
+      window.__STAGE_WINDOW__ = true;
+      const BetterNemoVersion = '260519.1';
+    </script>
+    <script src="extension-loader.js"></script>
+    <link rel="stylesheet" href="mdui.css" />
+    <link rel="stylesheet" href="material-icons.css" />
+    <script src="mdui.global.js"></script>
+    <script src="ua-parser.min.js"></script>
+    <link rel="stylesheet" href="modify.css" />
+    <link rel="stylesheet" href="settings.css" />
+    <style>
+      body {
+        margin: 0;
+        background: #111;
+        overflow: hidden;
+        height: 100vh;
+      }
+      /* 编辑器容器缩小到 1px 不影响 bundle 初始化，但不可见 */
+      #workspace, #react_root {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        overflow: hidden !important;
+        opacity: 0.01 !important;
+        pointer-events: none !important;
+      }
+      /* 隐藏 UI 壳元素 */
+      .top-bar, .menu-panel, .panel_mask {
+        display: none !important;
+      }
+      /* 舞台全屏显示 */
+      #theatre_container {
+        display: flex !important;
+        position: fixed !important;
+        top: 0 !important; left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: #000;
+        z-index: 10;
+        border: none !important;
+        border-radius: 0 !important;
+      }
+      #theatre_container #theatre {
+        height: 100% !important;
+        width: 100% !important;
+      }
+      #theatre_container #theatre canvas {
+        height: 100% !important;
+        width: 100% !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="workspace"></div>
+    <div id="react_root"></div>
+    <div id="test"></div>
+    <div id="highlight_test"></div>
+  </body>
+  <script>
+    (function() {
+      var bc = new BroadcastChannel('bn-stage');
+      var started = false;
+      // 等 bundle 创建后确保舞台在最顶层
+      function ensureStageOnTop() {
+        var tc = document.getElementById('theatre_container');
+        if (!tc) return;
+        tc.style.setProperty('display', 'flex', 'important');
+        tc.style.setProperty('position', 'fixed', 'important');
+        tc.style.setProperty('top', '0', 'important');
+        tc.style.setProperty('left', '0', 'important');
+        tc.style.setProperty('width', '100vw', 'important');
+        tc.style.setProperty('height', '100vh', 'important');
+        tc.style.setProperty('z-index', '10', 'important');
+        // 移到 body 末尾确保层叠最上
+        if (tc.parentNode && tc.parentNode !== document.body) {
+          document.body.appendChild(tc);
+        }
+        // 隐藏 Blockly 弹出元素
+        document.querySelectorAll('.blocklyWidgetDiv,.blocklyDropDownDiv').forEach(function(el) {
+          el.style.display = 'none';
+        });
+      }
+      setInterval(ensureStageOnTop, 300);
+      // 自动运行
+      function tryStart() {
+        if (started) return;
+        try {
+          var mgr = get_run_mgr();
+          if (mgr && typeof mgr.start === 'function') {
+            mgr.start();
+            started = true;
+            return;
+          }
+        } catch(e) {}
+        setTimeout(tryStart, 500);
+      }
+      setTimeout(tryStart, 1000);
+
+      bc.onmessage = function(e) {
+        if (e.data === 'stop') {
+          try {
+            var mgr = get_run_mgr();
+            if (mgr && mgr.stop) mgr.stop();
+          } catch(ex) {}
+        }
+      };
+      window.addEventListener('beforeunload', function() {
+        bc.postMessage('closed');
+      });
+    })();
+  </script>
+</html>

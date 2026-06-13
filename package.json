@@ -1,0 +1,21 @@
+{
+    "name": "better-nemo-desktop",
+    "version": "0.1.0",
+    "description": "BetterNemo Desktop - 编程猫扩展框架桌面版",
+    "type": "module",
+    "scripts": {
+        "dev": "tauri dev",
+        "build": "tauri build",
+        "preview": "tauri preview",
+        "dev:frontend": "vite",
+        "build:frontend": "tsc && vite build"
+    },
+    "dependencies": {
+        "@tauri-apps/api": "^1.5.0"
+    },
+    "devDependencies": {
+        "@tauri-apps/cli": "^1.5.0",
+        "typescript": "^5.4.5",
+        "vite": "^5.2.8"
+    }
+}

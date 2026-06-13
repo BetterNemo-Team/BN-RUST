@@ -1,0 +1,86 @@
+/* 主界面始终隐藏舞台（使用独立窗口） */
+#theatre_container {
+  display: none !important;
+}
+#react_root:has(.DXTF0X1TguMk3IISsnBre._2exagFlfCycMIMe1iH2OTO) #theatre_container {
+  display: none !important;
+}
+
+.injectionDiv {
+  width: 100% !important;
+  top: 40px !important;
+  height: calc(100% - 40px) !important;
+}
+
+#theatre {
+  height: 100% !important;
+  width: 100% !important;
+}
+
+#theatre canvas {
+  height: 100% !important;
+  width: 100% !important;
+}
+
+.ask_dialog {
+  height: 100% !important;
+  width: 100% !important;
+}
+
+.full_screen_btn {
+  display: none;
+}
+
+.DXTF0X1TguMk3IISsnBre {
+  left: 0 !important;
+  width: 100vw !important;
+}
+
+.fcm7GAGVExuATRwiTHK-u span {
+  visibility: hidden;
+}
+
+.fcm7GAGVExuATRwiTHK-u span::before {
+  content: '暂不支持连接设备';
+  visibility: visible;
+  font-size: 14px;
+  font-weight: 400;
+  color: #dbd2e8;
+  line-height: 20px;
+  display: block;
+  margin: auto;
+}
+
+._2r5ZXNCJ1F8bpwvTq7-8JS {
+  display: none;
+}
+
+._2ghpy004wMsymhJoX61aK3 {
+  display: none;
+}
+
+/* 增大积木盒按钮点击区域 */
+.blocklyTreeRow {
+  min-height: 30px !important;
+}
+.blocklyToolboxDiv {
+  overflow-y: auto !important;
+  max-height: 100% !important;
+}
+.blocklyTreeRow .blocklyTreeTitle {
+  font-size: 14px !important;
+}
+
+
+
+/* 垃圾桶 SVG 组放大 */
+svg .blocklyTrash,
+.blocklyTrash {
+  transform: scale(3) !important;
+  transform-origin: bottom right !important;
+}
+/* 垃圾桶阴影圆形放大 */
+.blocklyTrash .shadowCircle {
+  transform: scale(2) !important;
+  transform-origin: center !important;
+}

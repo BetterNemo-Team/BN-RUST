@@ -1,0 +1,39 @@
+{
+  "build": {
+    "devPath": "http://localhost:3000/bn/workspace.html",
+    "distDir": "../dist",
+    "beforeDevCommand": "",
+    "beforeBuildCommand": "",
+    "withGlobalTauri": true
+  },
+  "package": {
+    "productName": "BetterNemo",
+    "version": "0.1.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "shell": {
+        "all": false,
+        "open": true
+      }
+    },
+    "bundle": {
+      "active": true,
+      "identifier": "com.betternemo.desktop",
+      "icon": [
+        "icons/icon.ico"
+      ]
+    },
+    "windows": [
+      {
+        "title": "BetterNemo",
+        "width": 1200,
+        "height": 800,
+        "resizable": true,
+        "fullscreen": false,
+        "url": "bn/workspace.html"
+      }
+    ]
+  }
+}

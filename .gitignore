@@ -1,0 +1,10 @@
+node_modules/
+src-tauri/target/
+dist/
+tauri.log
+vite.log
+vite.err.log
+desktop.ini
+version/archive*
+version/*.*
+.DS_Store
