@@ -54,9 +54,11 @@ export function isCloudflareEnv(): boolean {
     return window.location.hostname === 'bn-p.pages.dev';
 }
 
+const DEV_SERVER_ORIGIN = (window as any).__BN_DEV_SERVER__ || '';
+
 export async function loadScript(src: string): Promise<void> {
-    if (isPhoneTestEnv()) {
-        src = `http://192.168.1.11:8080/${src}`;
+    if (isPhoneTestEnv() && DEV_SERVER_ORIGIN) {
+        src = `${DEV_SERVER_ORIGIN}/${src}`;
     }
     return new Promise((resolve, reject) => {
         const script = document.createElement('script');
@@ -68,8 +70,8 @@ export async function loadScript(src: string): Promise<void> {
 }
 
 export async function loadStyle(src: string): Promise<void> {
-    if (isPhoneTestEnv()) {
-        src = `http://192.168.1.11:8080/${src}`;
+    if (isPhoneTestEnv() && DEV_SERVER_ORIGIN) {
+        src = `${DEV_SERVER_ORIGIN}/${src}`;
     }
     return new Promise((resolve, reject) => {
         const style = document.createElement('link');
@@ -126,7 +128,7 @@ export async function init(): Promise<void> {
 
     if (!PLAYER && isPCTestEnv()) {
         setInterval(() => {
-            const theatre = document.querySelector('#theatre_container');
+            const theatre = document.querySelector('#theatre_container') as HTMLElement;
             if (theatre) {
                 theatre.style.display = 'none';
             }
@@ -145,7 +147,7 @@ export async function init(): Promise<void> {
     if (isCloudflareEnv()) {
         loadScript('https://db0l8fnn8oqtof.database.nocode.cn/storage/v1/object/public/wenjian/anonymous/1776601566193_aowalndxrwh.js');
     } else {
-        loadScript('assets/workspace.bundle.79d6432e01ccdecb492a.js');
+        loadScript('workspace.bundle.106e91c62fadbbb3c3b7.js');
     }
 
     await loadScript('workspace-scripts/blocks.js');

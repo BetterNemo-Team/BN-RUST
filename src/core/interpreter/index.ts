@@ -1,9 +1,9 @@
 import { waitHook } from '../../utils/wait-hook';
 
 export function get_run_mgr(): any {
-    const HookRuntime = window['HookRuntime'] as any;
-    if (!HookRuntime) return undefined;
-    return HookRuntime.exports.get_webview_runtime().heart.runtime_manager.run_mgr;
+    const hookRuntime = (window as any).HookRuntime;
+    if (!hookRuntime) return undefined;
+    return hookRuntime.exports.get_webview_runtime().heart.runtime_manager.run_mgr;
 }
 
 export async function regDomainFunction(name: string, func: (...args: any[]) => any, error_msg = ''): Promise<void> {

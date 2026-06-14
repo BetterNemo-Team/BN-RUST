@@ -13,8 +13,8 @@ export async function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export function createBlock(id: string): Blockly.Block {
-    const block = Blockly.mainWorkspace.new_block(id);
+export function createBlock(id: string): any {
+    const block = (Blockly.mainWorkspace as any).new_block(id);
     block.init_svg();
     block.render();
     return block;

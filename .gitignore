@@ -1,14 +1,82 @@
+# 依赖
 node_modules/
+
+# Rust 编译产物
 src-tauri/target/
 rust-renderer/target/
 rust-renderer/pkg/
-dist/
 target/
+
+# 构建输出
+dist/
+
+# 日志
+*.log
 tauri.log
 vite.log
 vite.err.log
+
+# 系统文件
 desktop.ini
+.DS_Store
+
+# 编辑器配置
+.vscode/
+
+# 版本归档
 version/archive*
 version/*.*
-.DS_Store
-*.wasm.d.ts
+
+# 多媒体资源（不需要上传）
+*.mp3
+*.png
+*.gif
+*.woff
+*.woff2
+*.ttf
+*.map
+
+# Chunk 分块文件
+*.chunk.js
+*.chunk.js.map
+
+# 第三方库（可通过 npm 安装）
+public/bn/fa.min.css
+public/bn/mdui.css
+public/bn/mdui.global.js
+public/bn/material-icons.css
+public/bn/material-icons.woff2
+public/bn/webfonts/
+public/bn/saveSvgAsPng.min.js
+public/bn/ua-parser.min.js
+public/bn/jszip.min.js
+public/bn/eruda.js
+public/bn/numjs.min.js
+public/bn/touchEmulator.js
+public/bn/javascript_compressed.js
+
+# 编译产物
+public/bn/workspace.bundle.*
+public/bn/helps.bundle.*
+public/bn/plugin.js
+public/bn/plugin.js.map
+
+# 测试文件
+test-*.json
+perf-test.js
+UPLOAD_CHECKLIST.md
+
+# 资源目录
+assets/
+public/bn/res/drawable/
+public/bn/res/raw/
+public/bn/res/template_*/
+public/bn/res/actor_*/
+public/bn/res/background_*/
+public/bn/res/webview_res/
+
+# WASM 产物（构建时生成）
+public/wasm/
+
+# src-tauri 产物
+src-tauri/target/

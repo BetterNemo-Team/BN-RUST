@@ -1,8 +1,9 @@
-export async function waitHook<T extends keyof HookMap>(name: T): Promise<HookMap[T]['exports']> {
-    while (!window[`Hook${name}` as keyof Window]) {
+export async function waitHook(name: string): Promise<any> {
+    const hookName = `Hook${name}` as string;
+    while (!(window as any)[hookName]) {
         await new Promise((resolve) => requestAnimationFrame(resolve));
     }
-    return (window[`Hook${name}` as keyof Window] as RuntimeHook).exports;
+    return (window as any)[hookName].exports;
 }
 
 export async function waitGetGlobal(name: string): Promise<any> {
@@ -27,7 +28,7 @@ export async function isBlocklyMainworkspaceLoaded(): Promise<Blockly.WorkspaceS
     return Blockly.mainWorkspace;
 }
 
-export async function isToolboxLoaded(): Promise<Blockly.Toolbox> {
+export async function isToolboxLoaded(): Promise<any> {
     while (!Blockly.mainWorkspace.get_toolbox()) {
         await new Promise((resolve) => requestAnimationFrame(resolve));
     }
@@ -38,5 +39,5 @@ export async function isElementLoaded(element: string): Promise<HTMLElement> {
     while (!document.querySelector(element)) {
         await new Promise((resolve) => requestAnimationFrame(resolve));
     }
-    return document.querySelector(element)!;
+    return document.querySelector(element) as HTMLElement;
 }
