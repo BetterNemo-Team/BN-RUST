@@ -930,7 +930,6 @@ async function showExtensionShop(disabled = [], callback) {
   await waitGetGlobal('_dsaf');
 
   const postMessage = _dsf.postMessage;
-  window['postMsg'] = _dsf.postMessage;
   _dsf.postMessage = (...args) => {
     if (experimentalConfig.webview_debug) {
       console.log('[Nemo -> Webview]', ...args);
@@ -955,6 +954,7 @@ async function showExtensionShop(disabled = [], callback) {
       }
     return postMessage.apply(_dsf, args);
   };
+  window['postMsg'] = _dsf.postMessage;
   const postMessageAsyn = _dsaf.postMessageAsyn;
   _dsaf.postMessageAsyn = async (...args) => {
     if (experimentalConfig.webview_debug) {
