@@ -294,7 +294,8 @@
   gap: 5px;
   font-size: 12px;
   font-family: inherit;
-  transition: all 0.12s;
+  transition: background 0.1s, color 0.1s;
+  will-change: background;
   -webkit-app-region: no-drag;
 }
 
@@ -324,7 +325,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.12s;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+  will-change: background;
   font-size: 13px;
   -webkit-app-region: no-drag;
 }
@@ -376,6 +378,7 @@
 
 .menu-panel-content {
   padding: 8px;
+  contain: layout style;
 }
 
 .menu-panel-title {

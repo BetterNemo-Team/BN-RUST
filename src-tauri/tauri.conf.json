@@ -3,7 +3,7 @@
     "devPath": "http://localhost:3000/bn/workspace.html",
     "distDir": "../dist",
     "beforeDevCommand": "",
-    "beforeBuildCommand": "",
+    "beforeBuildCommand": "npm run build:frontend",
     "withGlobalTauri": true
   },
   "package": {
@@ -16,6 +16,13 @@
       "shell": {
         "all": false,
         "open": true
+      },
+      "window": {
+        "all": false,
+        "create": true,
+        "close": true,
+        "show": true,
+        "hide": true
       }
     },
     "bundle": {

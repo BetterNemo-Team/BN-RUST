@@ -9,23 +9,18 @@
     <script src="touchEmulator.js"></script>
     <script>
       window.__STAGE_WINDOW__ = true;
+      window.__STAGE_ONLY__ = true;
       const BetterNemoVersion = '260519.1';
+      console.log('[Stage] 1. 初始化标记已设置 __STAGE_WINDOW__=__STAGE_WINDOW__, __STAGE_ONLY__=__STAGE_ONLY__');
     </script>
     <script src="extension-loader.js"></script>
     <link rel="stylesheet" href="mdui.css" />
     <link rel="stylesheet" href="material-icons.css" />
     <script src="mdui.global.js"></script>
-    <script src="ua-parser.min.js"></script>
     <link rel="stylesheet" href="modify.css" />
-    <link rel="stylesheet" href="settings.css" />
     <style>
-      body {
-        margin: 0;
-        background: #111;
-        overflow: hidden;
-        height: 100vh;
-      }
-      /* 编辑器容器缩小到 1px 不影响 bundle 初始化，但不可见 */
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { background: #000; overflow: hidden; height: 100vh; width: 100vw; }
       #workspace, #react_root {
         position: absolute !important;
         width: 1px !important;
@@ -34,11 +29,13 @@
         opacity: 0.01 !important;
         pointer-events: none !important;
       }
-      /* 隐藏 UI 壳元素 */
-      .top-bar, .menu-panel, .panel_mask {
+      .top-bar, .menu-panel, .panel_mask,
+      .blocklyToolboxDiv, .blocklySvg, .blocklyFlyout,
+      .blocklyWidgetDiv, .blocklyDropDownDiv,
+      .blocklyTrash, .blocklyScrollbar,
+      .injectionDiv, .DXTF0X1TguMk3IISsnBre {
         display: none !important;
       }
-      /* 舞台全屏显示 */
       #theatre_container {
         display: flex !important;
         position: fixed !important;
@@ -67,46 +64,85 @@
     <div id="highlight_test"></div>
   </body>
   <script>
+    console.log('[Stage] 2. 底部 script 执行，开始舞台控制逻辑');
     (function() {
       var bc = new BroadcastChannel('bn-stage');
       var started = false;
-      // 等 bundle 创建后确保舞台在最顶层
+      var logCount = 0;
+
       function ensureStageOnTop() {
         var tc = document.getElementById('theatre_container');
-        if (!tc) return;
+        if (!tc) {
+          if (logCount < 10) {
+            logCount++;
+            console.log('[Stage] ensureStageOnTop: theatre_container 不存在，等待中... (第' + logCount + '次)');
+            // 打印当前 DOM 状态
+            var ws = document.getElementById('workspace');
+            var rr = document.getElementById('react_root');
+            console.log('[Stage] DOM 状态:', {
+              workspace: ws ? { childCount: ws.childElementCount, html: ws.innerHTML.substring(0, 200) } : 'null',
+              react_root: rr ? { childCount: rr.childElementCount, html: rr.innerHTML.substring(0, 200) } : 'null',
+              bodyChildCount: document.body.childElementCount,
+              bodyChildren: Array.from(document.body.children).map(function(c) { return c.tagName + '#' + c.id + '.' + c.className.substring(0, 50); })
+            });
+          }
+          return;
+        }
         tc.style.setProperty('display', 'flex', 'important');
         tc.style.setProperty('position', 'fixed', 'important');
         tc.style.setProperty('top', '0', 'important');
         tc.style.setProperty('left', '0', 'important');
         tc.style.setProperty('width', '100vw', 'important');
         tc.style.setProperty('height', '100vh', 'important');
-        tc.style.setProperty('z-index', '10', 'important');
-        // 移到 body 末尾确保层叠最上
+        tc.style.setProperty('background', '#000', 'important');
+        tc.style.setProperty('z-index', '2147483647', 'important');
         if (tc.parentNode && tc.parentNode !== document.body) {
+          console.log('[Stage] ensureStageOnTop: 将 theatre_container 从', tc.parentNode.tagName + '#' + tc.parentNode.id, '移到 body');
           document.body.appendChild(tc);
         }
-        // 隐藏 Blockly 弹出元素
-        document.querySelectorAll('.blocklyWidgetDiv,.blocklyDropDownDiv').forEach(function(el) {
+        document.querySelectorAll('.blocklyWidgetDiv,.blocklyDropDownDiv,.blocklyToolboxDiv,.blocklySvg,.blocklyFlyout,.blocklyTrash,.blocklyScrollbar').forEach(function(el) {
           el.style.display = 'none';
         });
       }
-      setInterval(ensureStageOnTop, 300);
-      // 自动运行
+      setInterval(ensureStageOnTop, 200);
+
+      console.log('[Stage] 3. 开始尝试自动运行 (get_run_mgr)');
       function tryStart() {
         if (started) return;
         try {
           var mgr = get_run_mgr();
           if (mgr && typeof mgr.start === 'function') {
+            console.log('[Stage] 4. get_run_mgr() 返回成功，调用 mgr.start()');
             mgr.start();
             started = true;
             return;
+          } else {
+            console.log('[Stage] tryStart: get_run_mgr() 返回', mgr ? 'mgr 但无 start 方法' : 'null/undefined');
           }
-        } catch(e) {}
+        } catch(e) {
+          console.warn('[Stage] tryStart 异常:', e.message);
+        }
         setTimeout(tryStart, 500);
       }
       setTimeout(tryStart, 1000);
 
+      // 定期打印关键状态
+      setInterval(function() {
+        console.log('[Stage] 状态检查:', {
+          theatre_container: !!document.getElementById('theatre_container'),
+          HookRuntime: !!window.HookRuntime,
+          HookDsbridge: !!window.HookDsbridge,
+          _dsf: !!window._dsf,
+          _dsaf: !!window._dsaf,
+          Blockly: !!window.Blockly,
+          get_run_mgr: typeof window.get_run_mgr,
+          started: started,
+          STAGE_ONLY: window.__STAGE_ONLY__,
+        });
+      }, 3000);
+
       bc.onmessage = function(e) {
+        console.log('[Stage] BroadcastChannel 收到消息:', e.data);
         if (e.data === 'stop') {
           try {
             var mgr = get_run_mgr();

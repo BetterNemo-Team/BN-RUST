@@ -1,6 +1,9 @@
 node_modules/
 src-tauri/target/
+rust-renderer/target/
+rust-renderer/pkg/
 dist/
+target/
 tauri.log
 vite.log
 vite.err.log
@@ -8,3 +11,4 @@ desktop.ini
 version/archive*
 version/*.*
 .DS_Store
+*.wasm.d.ts

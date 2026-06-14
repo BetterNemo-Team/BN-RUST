@@ -145,6 +145,7 @@ window.extensionMetaData = extensionMetaData;
 let themeMetaData = {};
 // --------------- 加载页面 ---------------
 (async () => {
+  console.log('[Stage:ext-loader] 开始加载页面, stageOnly=' + !!window.__STAGE_ONLY__);
   setLoaderInfo('获取扩展列表...');
   await loadScript('extensions/_CONFIG.js');
   extensionMgrLog('扩展列表:', EXTENSION_FILES.join(', '));
@@ -162,24 +163,40 @@ let themeMetaData = {};
   } catch(e) {}
   await loadScript('workspace-scripts/utils.js');
   setLoaderInfo('加载核心脚本...');
+  console.log('[Stage:ext-loader] 加载 workspace.bundle...');
   // workspace.bundle 在首帧渲染后加载，减少首帧阻塞
   requestAnimationFrame(function() {
     requestAnimationFrame(function() {
       if (isCloudflareEnv())
         loadScript('https://db0l8fnn8oqtof.database.nocode.cn/storage/v1/object/public/wenjian/anonymous/177220279682_q1jamqn6clr.js');
-      else loadScript('workspace.bundle.106e91c62fadbbb3c3b7.js');
+      else loadScript('workspace.bundle.106e91c62fadbbb3c3b7.js').then(function() {
+        console.log('[Stage:ext-loader] workspace.bundle 加载完成');
+      }).catch(function(e) {
+        console.error('[Stage:ext-loader] workspace.bundle 加载失败:', e);
+      });
     });
   });
   setLoaderInfo('加载扩展脚本...');
+  var stageOnly = !!window.__STAGE_ONLY__;
+  console.log('[Stage:ext-loader] 加载扩展脚本, stageOnly=' + stageOnly);
   await Promise.all([
     loadScript('workspace-scripts/blocks.js'),
     loadScript('workspace-scripts/prototype-inject.js'),
-    loadScript('workspace-scripts/toolbox.js'),
+    stageOnly ? Promise.resolve() : loadScript('workspace-scripts/toolbox.js'),
     loadScript('workspace-scripts/domain-functions.js'),
     loadScript('workspace-scripts/cat-block.js'),
-    loadScript('workspace-scripts/menu.js'),
-    loadScript('workspace-scripts/settings.js'),
+    stageOnly ? Promise.resolve() : loadScript('workspace-scripts/menu.js'),
+    stageOnly ? Promise.resolve() : loadScript('workspace-scripts/settings.js'),
+    loadScript('workspace-scripts/bn-format.js'),
+    loadScript('render-bridge/pixi-proxy.js'),
+    loadScript('render-bridge/data-serializer.js'),
+    loadScript('render-bridge/texture-manager.js'),
+    loadScript('render-bridge/pixi-scanner.js'),
+    loadScript('render-bridge/index.js'),
   ]);
+  console.log('[Stage:ext-loader] 所有脚本加载完成');
+
+  if (!stageOnly) {
   // 设置关闭按钮
   setTimeout(() => {
     document.getElementById('settingsCloseBtn')?.addEventListener('click', () => {
@@ -195,6 +212,7 @@ let themeMetaData = {};
       };
     }
   }, 1000);
+  }
 
 
   // 舞台弹出窗口
@@ -214,12 +232,13 @@ let themeMetaData = {};
   function openStageWindow() {
     if (stageWin && !stageWin.closed) { stageWin.focus(); return; }
     setupStageBC();
+    var stageUrl = 'stage.html';
     // 尝试 Tauri API
     try {
       if (window.__TAURI__ && window.__TAURI__.window) {
         var WebviewWindow = window.__TAURI__.window.WebviewWindow;
         stageWin = new WebviewWindow('stage', {
-          url: 'bn/stage.html',
+          url: stageUrl,
           width: 480, height: 640,
           title: 'BetterNemo - 舞台',
           center: true, resizable: true,
@@ -228,9 +247,9 @@ let themeMetaData = {};
         return;
       }
     } catch(e) {}
-    // 降级：window.open
+    // 降级：window.open（当前页面在 bn/ 目录下，直接用 stage.html）
     try {
-      stageWin = window.open('bn/stage.html', 'bn-stage-win', 'width=480,height=640,resizable=1');
+      stageWin = window.open(stageUrl, 'bn-stage-win', 'width=480,height=640,resizable=1');
     } catch(e) {}
   }
   window.showStage = function() { openStageWindow(); };
@@ -240,13 +259,22 @@ let themeMetaData = {};
     }
     stageWin = null;
   };
+  if (!stageOnly) {
   // 缓存的元素引用
   var cached = {};
   // 设置顶栏偏移（CSS !important 为主，此处仅首次检测）
   (function() {
     var topH = 40;
-    var DEFAULT_BG = 'https://gitee.com/SandMo/BetterNemo-Extensions/raw/master/images/background/bn_background.webp';
-    var DEFAULT_CLR = '#221D4E';
+    var DEFAULT_BG = 'res/bn_background.webp';
+    var DEFAULT_CLR = '#1a1a2e';
+    // 修复旧缓存：替换 gitee 远程地址为本地路径
+    var oldBg = storage.get('backgroundImage');
+    if (oldBg && oldBg.indexOf('gitee.com') !== -1) {
+      storage.set('backgroundImage', DEFAULT_BG);
+    }
+    // 确保首次加载时默认值写入 storage
+    if (!storage.get('backgroundImage')) storage.set('backgroundImage', DEFAULT_BG);
+    if (!storage.get('backgroundColor')) storage.set('backgroundColor', DEFAULT_CLR);
     function apply() {
       var inj = cached.inj;
       if (!inj) return;
@@ -260,30 +288,32 @@ let themeMetaData = {};
     function applyBg() {
       var inj = cached.inj;
       if (!inj) return;
-      inj.style.setProperty('background-image', 'url("' + (storage.get('backgroundImage') || DEFAULT_BG) + '")', 'important');
-      inj.style.setProperty('background-size', 'contain', 'important');
+      var bgImg = storage.get('backgroundImage');
+      var bgClr = storage.get('backgroundColor');
+      inj.style.setProperty('background-image', 'url("' + (bgImg || DEFAULT_BG) + '")', 'important');
+      inj.style.setProperty('background-size', 'cover', 'important');
+      inj.style.setProperty('background-position', 'center', 'important');
       inj.style.setProperty('background-repeat', 'no-repeat', 'important');
-      inj.style.setProperty('background-color', storage.get('backgroundColor') || DEFAULT_CLR, 'important');
+      inj.style.setProperty('background-color', bgClr || DEFAULT_CLR, 'important');
     }
-    // MutationObserver 仅检测 injectionDiv 出现（样式保护由 CSS !important 处理）
+    // MutationObserver 仅检测 injectionDiv 出现（找到后立即断开）
     var obs = new MutationObserver(function(muts) {
-      function scan(n) {
-        if (!n || n.nodeType !== 1) return;
-        var el = n.matches && n.matches('.injectionDiv') ? n : n.querySelector('.injectionDiv');
-        if (el && !cached.inj) {
-          cached.inj = el;
-          cached.tb = document.querySelector('.blocklyToolboxDiv');
-          cached.svg = document.querySelector('.blocklySvg');
-          cached.flyout = document.querySelector('.blocklyFlyout');
-          apply();
-          applyBg();
-          return true;
-        }
-      }
       for (var i = 0; i < muts.length; i++) {
-        if (scan(muts[i].target)) return;
-        for (var j = 0; j < (muts[i].addedNodes || []).length; j++) {
-          if (scan(muts[i].addedNodes[j])) return;
+        var added = muts[i].addedNodes;
+        for (var j = 0; j < added.length; j++) {
+          var n = added[j];
+          if (n.nodeType !== 1) continue;
+          var el = n.matches && n.matches('.injectionDiv') ? n : n.querySelector('.injectionDiv');
+          if (el) {
+            cached.inj = el;
+            cached.tb = document.querySelector('.blocklyToolboxDiv');
+            cached.svg = document.querySelector('.blocklySvg');
+            cached.flyout = document.querySelector('.blocklyFlyout');
+            apply();
+            applyBg();
+            obs.disconnect();
+            return;
+          }
         }
       }
     });
@@ -339,6 +369,53 @@ let themeMetaData = {};
     }
   });
   setLoaderInfo('资源加载完成！');
+  // --------------- 拖放导入作品 ---------------
+  (function() {
+    var dragEnterCount = 0;
+    var overlay;
+    function showOverlay() {
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'bn-drop-overlay';
+      }
+      if (!overlay.parentNode) document.body.appendChild(overlay);
+      overlay.style.display = 'flex';
+    }
+    function hideOverlay() {
+      if (overlay) overlay.style.display = 'none';
+    }
+    document.addEventListener('dragenter', function(e) {
+      e.preventDefault();
+      dragEnterCount++;
+      showOverlay();
+    });
+    document.addEventListener('dragover', function(e) {
+      e.preventDefault();
+    });
+    document.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      dragEnterCount--;
+      if (dragEnterCount <= 0) { dragEnterCount = 0; hideOverlay(); }
+    });
+    document.addEventListener('drop', function(e) {
+      e.preventDefault();
+      dragEnterCount = 0;
+      hideOverlay();
+      var files = e.dataTransfer.files;
+      if (!files || files.length === 0) return;
+      var file = files[0];
+      if (!file.name.match(/\.(bcm|json|bnlink|bn)$/i)) {
+        alert('请拖入 .bcm/.json/.bnlink/.bn 格式的作品文件');
+        return;
+      }
+      if (window.loadProjectFile) {
+        window.loadProjectFile(file, function(res) {
+          if (res.error) alert('导入失败：' + res.error);
+        });
+      }
+    });
+  })();
+  } // end if (!stageOnly)
   /**
   window.parent.postMessage({
     "__bn_bridge__": true,

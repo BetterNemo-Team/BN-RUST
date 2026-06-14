@@ -35,6 +35,15 @@
   function emitToParent(payload) {
     if (window.parent && window.parent !== window) {
       window.parent.postMessage({ [BRIDGE_FLAG]: true, ...payload }, '*');
+    } else {
+      // 桌面端：模拟 native->webview 回路，直接调用桥接 API
+      if (payload.api === '_dsaf.postMessageAsyn' && window._dsaf?.postMessageAsyn) {
+        window._dsaf.postMessageAsyn(...payload.args);
+      } else if (payload.api === '_dsf.postMessage' && window._dsf?.postMessage) {
+        window._dsf.postMessage(...payload.args);
+      } else if (payload.api === '_dsbridge.call' && window._dsbridge?.call) {
+        window._dsbridge.call(...payload.args);
+      }
     }
   }
 

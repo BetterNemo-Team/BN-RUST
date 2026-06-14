@@ -176,8 +176,8 @@
     bgTitle.textContent = '背景';
     body.appendChild(bgTitle);
 
-    var presetBg = 'https://gitee.com/SandMo/BetterNemo-Extensions/raw/master/images/background/bn_background.webp';
-    var presetColor = '#221D4E';
+    var presetBg = 'res/bn_background.webp';
+    var presetColor = '#1a1a2e';
 
     var bgItem = document.createElement('div');
     bgItem.className = 'settings-item';

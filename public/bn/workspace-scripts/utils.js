@@ -956,7 +956,6 @@ async function showExtensionShop(disabled = [], callback) {
     return postMessage.apply(_dsf, args);
   };
   const postMessageAsyn = _dsaf.postMessageAsyn;
-  window['postMsgAsyn'] = _dsaf.postMessageAsyn;
   _dsaf.postMessageAsyn = async (...args) => {
     if (experimentalConfig.webview_debug) {
       console.log('[Nemo -> Webview] [ASYNC]', ...args);
@@ -965,8 +964,29 @@ async function showExtensionShop(disabled = [], callback) {
         data: [...args]
       }));
     }
+    // 桌面端：直接路由 LOAD_BCM 到 React 应用
+    if (args[0] === 'LOAD_BCM') {
+      var bcmData = typeof args[1] === 'string' ? JSON.parse(args[1]) : args[1];
+      console.log('[Desktop] LOAD_BCM 直接路由, actors:', Object.keys(bcmData.actors?.actors_dict || {}));
+      function tryDispatch(attempt) {
+        var redux = window.HookRedux;
+        var store = redux && (redux.NemoStore || redux.default || redux);
+        if (store && typeof store.dispatch === 'function') {
+          store.dispatch({ type: 'LOAD_BCM', payload: bcmData });
+          console.log('[Desktop] LOAD_BCM 已 dispatch 到 Redux store (attempt ' + attempt + ')');
+        } else if (attempt < 10) {
+          console.warn('[Desktop] Redux store 不可用, 重试 #' + (attempt + 1));
+          setTimeout(function() { tryDispatch(attempt + 1); }, 500);
+        } else {
+          console.error('[Desktop] Redux store 始终不可用');
+        }
+      }
+      tryDispatch(1);
+      return;
+    }
     return postMessageAsyn.apply(_dsaf, args);
   };
+  window['postMsgAsyn'] = _dsaf.postMessageAsyn;
 })();
 function createBlock(id) {
   const b = Blockly.mainWorkspace.new_block(id);
@@ -1210,6 +1230,262 @@ class BNGenerator {
     return code;
   }
 }
+// --------------- BNLink 格式 & 作品加载 ---------------
+// BNLink v1: 轻量作品链接文件 (.bnlink)
+// { v:1, n:"项目名", r:{ t:"data"|"data2"|"wid"|"url", ... } }
+//   r.t="data"  → r.d: base64 编码的 BCM JSON
+//   r.t="data2" → r.j: 直接嵌入的 BCM JSON（纯本地，无 base64 膨胀）
+//   r.t="wid"   → r.id: 编程猫作品 ID
+//   r.t="url"   → r.u: BCM 文件 URL
+window.loadProjectFile = function(file, callback) {
+  if (file.name.match(/\.bn$/i)) {
+    // .bn 格式：zip 容器，需要 ArrayBuffer
+    var reader = new FileReader();
+    reader.onload = async function(e) {
+      try {
+        if (!window.loadBNProject) { showMsg('导入失败：.bn 加载器未就绪'); callback({ error: '.bn 加载器未就绪' }); return; }
+        var result = await window.loadBNProject(e.target.result);
+        if (!result || result.error) { showMsg('导入失败：' + (result ? result.error : '未知解析错误')); callback(result || { error: '未知解析错误' }); return; }
+        loadProjectJSON(result.bcm, false, function(res) {
+          if (res.ok) res.name = result.bcm.project_name;
+          callback(res);
+        });
+      } catch(ex) {
+        showMsg('导入失败：.bn 加载失败 - ' + ex.message);
+        callback({ error: '.bn 加载失败: ' + ex.message });
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  } else if (file.name.match(/\.bnlink$/i)) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var link = JSON.parse(e.target.result);
+        if (!link || link.v !== 1 || !link.r) throw new Error('无效的 BNLink 文件');
+        resolveBNLink(link, callback);
+      } catch(ex) {
+        showMsg('导入失败：' + ex.message);
+        callback({ error: ex.message });
+      }
+    };
+    reader.readAsText(file);
+  } else {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var json = JSON.parse(e.target.result);
+        loadProjectJSON(json, false, callback);
+      } catch(ex) {
+        showMsg('导入失败：文件解析错误');
+        callback({ error: ex.message });
+      }
+    };
+    reader.readAsText(file);
+  }
+};
+function resolveBNLink(link, callback) {
+  if (link.r.t === 'data') {
+    try {
+      var json = JSON.parse(atob(link.r.d));
+      loadProjectJSON(json, false, callback);
+    } catch(ex) { callback({ error: 'BNLink 数据解码失败: ' + ex.message }); }
+  } else if (link.r.t === 'data2') {
+    loadProjectJSON(link.r.j, false, callback);
+  } else if (link.r.t === 'url') {
+    fetch(link.r.u).then(function(r) { return r.json(); }).then(function(json) {
+      loadProjectJSON(json, false, callback);
+    }).catch(function(err) { callback({ error: '获取 URL 失败: ' + err.message }); });
+  } else if (link.r.t === 'wid') {
+    fetch('https://api.codemao.cn/creation-tools/v1/works/' + link.r.id + '/source/public')
+      .then(function(r) { return r.json(); })
+      .then(function(info) {
+        if (info.error_code) { callback({ error: info.error_message }); return; }
+        return fetch(info.work_urls[0]).then(function(r) { return r.json(); });
+      })
+      .then(function(bcm) { loadProjectJSON(bcm, false, callback); })
+      .catch(function(err) { callback({ error: '获取作品失败: ' + err.message }); });
+  } else {
+    callback({ error: '不支持的引用类型: ' + link.r.t });
+  }
+}
+function convertCodeMaoBcm(json) {
+  console.log('[Import] convertCodeMaoBcm: 原始 BCM keys:', Object.keys(json));
+  console.log('[Import] theatre scenes:', Object.keys(json.theatre.scenes || {}));
+  console.log('[Import] theatre actors:', Object.keys(json.theatre.actors || {}));
+  var theatre = json.theatre;
+  var actors = {};
+  var scenes = {};
+  var styles = {};
+  // 转换 actors
+  if (theatre.actors) {
+    Object.keys(theatre.actors).forEach(function(id) {
+      var a = theatre.actors[id];
+      actors[id] = {
+        id: id,
+        name: a.name || '',
+        scene_id: '',
+        current_style_id: a.current_style_id || '',
+        x: a.x || 0, y: a.y || 0,
+        size: a.scale || 100,
+        direction: a.rotation || 0,
+        visible: a.visible !== false,
+        layer_order: 0,
+        variables: {},
+        lists: {},
+        blocksXML: a.blocksXML || ''
+      };
+    });
+  }
+  // 转换 scenes
+  if (theatre.scenes) {
+    Object.keys(theatre.scenes).forEach(function(id) {
+      var s = theatre.scenes[id];
+      scenes[id] = {
+        name: s.name || '',
+        current_style_id: s.current_style_id || '',
+        styles: {},
+        actors: s.actors || [],
+        custom_events: [],
+        variables: {},
+        lists: {},
+        blocksXML: s.blocksXML || ''
+      };
+      // 关联 actor 到 scene
+      (s.actors || []).forEach(function(aid) {
+        if (actors[aid]) actors[aid].scene_id = id;
+      });
+    });
+  }
+  // 转换 styles
+  if (json.theatre.styles) {
+    Object.keys(json.theatre.styles).forEach(function(id) {
+      var st = json.theatre.styles[id];
+      styles[id] = {
+        name: st.name || '',
+        path: st.path || st.url || '',
+        width: st.width || 0,
+        height: st.height || 0,
+        background_color: st.background_color || ''
+      };
+    });
+  }
+  return {
+    project_name: json.project_name || '未命名',
+    app_version: json.application_version || '0.16.2',
+    stage_size: { width: json.width || 480, height: json.height || 360 },
+    actors: { actors_dict: actors },
+    scenes: { scenes_dict: scenes },
+    styles: { styles_dict: styles },
+    variables: json.variables || {},
+    lists: json.lists || {}
+  };
+}
+function loadProjectJSON(json, fromCache, callback) {
+  var bcm, data;
+  console.log('[Import] loadProjectJSON 输入:', Object.keys(json), 'theatre:', !!json.theatre, 'actors:', !!json.actors, 'scenes:', !!json.scenes);
+  // 编程猫 BCM 格式：actors/scenes/styles 在 theatre 下，积木在 blocksXML 字段
+  if (json.theatre && json.theatre.scenes && !json.scenes) {
+    console.log('[Import] 检测到编程猫 BCM 格式，执行转换');
+    bcm = convertCodeMaoBcm(json);
+    console.log('[Import] 转换后 bcm keys:', Object.keys(bcm), 'actors:', Object.keys(bcm.actors || {}));
+    data = {
+      avatar_url: '', bcm_version: json.application_version || '0.16.2',
+      context_menu_with_set_block_visibility: false,
+      enable_hide: false, is_login: false, is_pad: false,
+      nickname: '', sidebar_width: 64,
+      stage_position: {
+        portrait: {
+          fullscreen: { bottom: 0, height: json.height || 480, left: 0, ratio: 0, right: 0, top: 0, width: json.width || 360 },
+          normal: { bottom: 0, height: 0, left: 0, ratio: 0, right: 0, top: 0, width: 0 }
+        }
+      },
+      toolbox_mode: 'normal', translucent_block_visible: 'visible',
+      user_id: '', user_level: -1, user_token: '', webview_height: 0, work_id: ''
+    };
+  } else if (json.actors && json.scenes) {
+    bcm = json;
+    data = {
+      avatar_url: '', bcm_version: bcm.app_version || '0.16.2',
+      context_menu_with_set_block_visibility: false,
+      enable_hide: false, is_login: false, is_pad: false,
+      nickname: '', sidebar_width: 64,
+      stage_position: {
+        portrait: {
+          fullscreen: { bottom: 0, height: 480, left: 0, ratio: 0, right: 0, top: 0, width: 360 },
+          normal: { bottom: 0, height: 0, left: 0, ratio: 0, right: 0, top: 0, width: 0 }
+        }
+      },
+      toolbox_mode: 'normal', translucent_block_visible: 'visible',
+      user_id: '', user_level: -1, user_token: '', webview_height: 0, work_id: ''
+    };
+  } else if (json.bcm) {
+    bcm = json.bcm;
+    data = json.data || {};
+  } else {
+    showMsg('导入失败：无法识别的作品文件格式');
+    callback({ error: '无法识别的作品文件格式' });
+    return;
+  }
+  // 显示导入加载遮罩
+  var overlay = document.getElementById('bnLoadingOverlay');
+  if (overlay) { overlay.classList.add('active'); }
+  try { var mgr = get_run_mgr(); if (mgr && mgr.stop) mgr.stop(); } catch(ex) {}
+  if (window.postMsg && window.postMsgAsyn) {
+    console.log('[Import] 发送 INIT_WEBVIEW_DATA');
+    window.postMsg('INIT_WEBVIEW_DATA', JSON.stringify(data));
+    console.log('[Import] 发送 LOAD_BCM, bcm keys:', Object.keys(bcm), 'actors count:', Object.keys(bcm.actors || {}).length);
+    console.log('[Import] LOAD_BCM JSON 长度:', JSON.stringify(bcm).length);
+    window.postMsgAsyn('LOAD_BCM', JSON.stringify(bcm));
+    // 加入最近作品缓存（仅在非回放时）
+    if (!fromCache && window.bnCache) {
+      window.bnCache.add({ name: bcm.project_name || '未命名', bcm: json });
+    }
+    callback({ ok: true, name: bcm.project_name });
+    showMsg('导入成功：' + (bcm.project_name || '未命名作品'));
+    // 延迟隐藏遮罩
+    setTimeout(function() {
+      if (overlay) { overlay.classList.remove('active'); }
+    }, 600);
+  } else {
+    if (overlay) { overlay.classList.remove('active'); }
+    showMsg('导入失败：作品加载器未就绪');
+    callback({ error: '作品加载器未就绪' });
+  }
+}
+window.loadProjectJSON = loadProjectJSON;
+window.saveBNLink = function(name, ref) {
+  return JSON.stringify({ v: 1, n: name, r: ref });
+};
+window.getCurrentBCM = function() {
+  try {
+    var redux = window.HookRedux;
+    if (!redux) return null;
+    var store = redux.NemoStore || redux.default || redux;
+    if (typeof store.getState === 'function') return store.getState().bcm;
+  } catch(e) {}
+  return null;
+};
+// --------------- 最近作品缓存 ---------------
+window.bnCache = {
+  _key: 'bn_recent',
+  _max: 10,
+  list: function() {
+    try { return JSON.parse(localStorage.getItem(window.bnCache._key)) || []; } catch(e) { return []; }
+  },
+  add: function(entry) {
+    var list = window.bnCache.list();
+    // 去重（同名+同数据指纹）
+    var fingerprint = function(e) { return e.name + '|' + (typeof e.bcm === 'object' ? JSON.stringify(e.bcm).length : ''); };
+    var fp = fingerprint(entry);
+    list = list.filter(function(e) { return fingerprint(e) !== fp; });
+    list.unshift({ name: entry.name, bcm: entry.bcm, time: Date.now() });
+    if (list.length > window.bnCache._max) list.length = window.bnCache._max;
+    try { localStorage.setItem(window.bnCache._key, JSON.stringify(list)); } catch(e) { /* storage full, ignore */ }
+  },
+  clear: function() {
+    try { localStorage.removeItem(window.bnCache._key); } catch(e) {}
+  }
+};
 loadScript("https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.15.4/beautify.min.js");
 // 测试使用
 BetterNemo._ = {

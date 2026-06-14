@@ -25,16 +25,18 @@
 
   function renderMenu(menu) {
     panelContent.innerHTML = '';
+    var frag = document.createDocumentFragment();
     switch (menu) {
-      case 'run': renderRunMenu(); break;
-      case 'extensions': renderExtensionsMenu(); break;
-      case 'editor': renderEditorMenu(); break;
-      case 'runtime': renderRuntimeMenu(); break;
-      case 'more': renderMoreMenu(); break;
+      case 'run': renderRunMenu(frag); break;
+      case 'extensions': renderExtensionsMenu(frag); break;
+      case 'editor': renderEditorMenu(frag); break;
+      case 'runtime': renderRuntimeMenu(frag); break;
+      case 'more': renderMoreMenu(frag); break;
     }
+    panelContent.appendChild(frag);
   }
 
-  function renderRunMenu() {
+  function renderRunMenu(frag) {
     var item = createItem('启动运行', 'play', function() {
       closePanel();
       if (window.showStage) showStage();
@@ -44,7 +46,7 @@
         if (mgr && typeof mgr.run === 'function') { mgr.run(); return; }
       } catch(e) {}
     });
-    panelContent.appendChild(item);
+    frag.appendChild(item);
 
     var item2 = createItem('停止', 'stop', function() {
       closePanel();
@@ -54,14 +56,14 @@
         if (mgr && typeof mgr.stop === 'function') { mgr.stop(); return; }
       } catch(e) {}
     });
-    panelContent.appendChild(item2);
+    frag.appendChild(item2);
   }
 
-  function renderExtensionsMenu() {
+  function renderExtensionsMenu(frag) {
     var title = document.createElement('div');
     title.className = 'menu-panel-title';
     title.textContent = '内置扩展';
-    panelContent.appendChild(title);
+    frag.appendChild(title);
 
     var config = storage.get('extension_config') || {};
     EXTENSION_FILES.forEach(function(fileName) {
@@ -71,7 +73,7 @@
         config[fileName] = checked;
         storage.set('extension_config', config);
       });
-      panelContent.appendChild(item);
+      frag.appendChild(item);
     });
   }
 
@@ -109,21 +111,21 @@
     panelContent.appendChild(applyBtn);
   }
 
-  function renderEditorMenu() {
+  function renderEditorMenu(frag) {
     var title = document.createElement('div');
     title.className = 'menu-panel-title';
     title.textContent = '编辑器设置';
-    panelContent.appendChild(title);
+    frag.appendChild(title);
 
     // 猫块
-    panelContent.appendChild(createToggleItem('猫块', !!storage.get('cat'), function(checked) {
+    frag.appendChild(createToggleItem('猫块', !!storage.get('cat'), function(checked) {
       storage.set('cat', checked);
       if (checked) { if (window.enableCatBlock) enableCatBlock(); }
       else { if (window.disableCatBlock) disableCatBlock(); }
     }));
 
     // 积木缺口
-    panelContent.appendChild(createToggleItem('积木缺口', !!storage.get('notch'), function(checked) {
+    frag.appendChild(createToggleItem('积木缺口', !!storage.get('notch'), function(checked) {
       storage.set('notch', checked);
     }));
 
@@ -139,13 +141,13 @@
       storage.set('flyout_max_width', Number(widthInput.value));
     });
     widthItem.appendChild(widthInput);
-    panelContent.appendChild(widthItem);
+    frag.appendChild(widthItem);
 
     // 背景
     var bgTitle = document.createElement('div');
     bgTitle.className = 'menu-panel-title';
     bgTitle.textContent = '背景';
-    panelContent.appendChild(bgTitle);
+    frag.appendChild(bgTitle);
 
     var presetBg = 'https://gitee.com/SandMo/BetterNemo-Extensions/raw/master/images/background/bn_background.webp';
     var presetColor = '#221D4E';
@@ -170,7 +172,7 @@
       }
     });
     bgItem.appendChild(bgSelect);
-    panelContent.appendChild(bgItem);
+    frag.appendChild(bgItem);
 
     if (storage.get('background') === 'custom') {
       var uploadItem = document.createElement('div');
@@ -189,7 +191,7 @@
         reader.readAsDataURL(file);
       });
       uploadItem.appendChild(fileInput);
-      panelContent.appendChild(uploadItem);
+      frag.appendChild(uploadItem);
 
       var imgItem = document.createElement('div');
       imgItem.className = 'menu-panel-item-row';
@@ -200,7 +202,7 @@
       imgInput.value = storage.get('backgroundImage') || presetBg;
       imgInput.addEventListener('change', function() { storage.set('backgroundImage', imgInput.value); });
       imgItem.appendChild(imgInput);
-      panelContent.appendChild(imgItem);
+      frag.appendChild(imgItem);
 
       var colItem = document.createElement('div');
       colItem.className = 'menu-panel-item-row';
@@ -211,30 +213,115 @@
       colInput.value = storage.get('backgroundColor') || presetColor;
       colInput.addEventListener('change', function() { storage.set('backgroundColor', colInput.value); });
       colItem.appendChild(colInput);
-      panelContent.appendChild(colItem);
+      frag.appendChild(colItem);
     }
+
+    // 链接
+    var linkTitle = document.createElement('div');
+    linkTitle.className = 'menu-panel-title';
+    linkTitle.textContent = '链接';
+    frag.appendChild(linkTitle);
+
+    frag.appendChild(createItem('导出作品包 (.bn)', 'file-archive', function() {
+      closePanel();
+      try {
+        var bcm = window.getCurrentBCM();
+        if (!bcm) { alert('无法获取当前作品数据'); return; }
+        if (window.saveBNProject) window.saveBNProject(bcm, bcm.project_name || '未命名作品');
+        else alert('导出功能不可用');
+      } catch(ex) {
+        alert('导出失败：' + ex.message);
+      }
+    }));
   }
 
-  function renderRuntimeMenu() {
+  function renderRuntimeMenu(frag) {
     var title = document.createElement('div');
     title.className = 'menu-panel-title';
     title.textContent = '运行时设置';
-    panelContent.appendChild(title);
+    frag.appendChild(title);
+
+    // 舞台引擎切换
+    var engineTitle = document.createElement('div');
+    engineTitle.className = 'menu-panel-title';
+    engineTitle.textContent = '舞台引擎';
+    frag.appendChild(engineTitle);
+
+    var currentEngine = storage.get('render_engine') || 'pixi';
+
+    var engineDesc = document.createElement('div');
+    engineDesc.className = 'menu-panel-hint';
+    engineDesc.textContent = currentEngine === 'rust' ? '当前: Rust (WebGPU)' : '当前: PIXI.js (Canvas)';
+    engineDesc.id = 'engineStatusHint';
+    frag.appendChild(engineDesc);
+
+    // PIXI.js 引擎选项
+    var pixiItem = createItem('PIXI.js (Canvas)', 'image', function() {
+      closePanel();
+      if (currentEngine === 'pixi') return;
+      storage.set('render_engine', 'pixi');
+      if (window.__renderBridge) {
+        window.__renderBridge.switchEngine('pixi');
+      }
+      window.dispatchEvent(new CustomEvent('bn-engine-changed', { detail: { engine: 'pixi' } }));
+    });
+    if (currentEngine === 'pixi') {
+      pixiItem.style.background = 'rgba(76, 175, 80, 0.2)';
+      pixiItem.style.borderLeft = '3px solid #4CAF50';
+    }
+    frag.appendChild(pixiItem);
+
+    // Rust 引擎选项
+    var rustItem = createItem('Rust (WebGPU)', 'microchip', function() {
+      closePanel();
+      if (currentEngine === 'rust') return;
+      storage.set('render_engine', 'rust');
+      if (window.__renderBridge) {
+        window.__renderBridge.switchEngine('rust').then(function(ok) {
+          if (!ok) {
+            alert('Rust 引擎加载失败，请检查浏览器是否支持 WebGPU');
+            storage.set('render_engine', 'pixi');
+          }
+        });
+      }
+      window.dispatchEvent(new CustomEvent('bn-engine-changed', { detail: { engine: 'rust' } }));
+    });
+    if (currentEngine === 'rust') {
+      rustItem.style.background = 'rgba(76, 175, 80, 0.2)';
+      rustItem.style.borderLeft = '3px solid #4CAF50';
+    }
+    frag.appendChild(rustItem);
+
+    // WASM 状态
+    var statusItem = document.createElement('div');
+    statusItem.className = 'menu-panel-hint';
+    statusItem.style.marginTop = '8px';
+    if (window.__renderBridge && window.__renderBridge.isWasmReady()) {
+      statusItem.textContent = 'Rust WASM: 已就绪';
+      statusItem.style.color = '#4CAF50';
+    } else if (window.__renderBridge && window.__renderBridge.isWasmLoading()) {
+      statusItem.textContent = 'Rust WASM: 加载中...';
+      statusItem.style.color = '#FFC107';
+    } else {
+      statusItem.textContent = 'Rust WASM: 未加载';
+      statusItem.style.color = '#9E9E9E';
+    }
+    frag.appendChild(statusItem);
 
     var hint = document.createElement('div');
     hint.className = 'menu-panel-hint';
-    hint.textContent = '此配置跟随 Webview 存储';
-    panelContent.appendChild(hint);
+    hint.textContent = '切换引擎后下次运行生效';
+    frag.appendChild(hint);
   }
 
-  function renderMoreMenu() {
+  function renderMoreMenu(frag) {
     var title = document.createElement('div');
     title.className = 'menu-panel-title';
     title.textContent = '更多';
-    panelContent.appendChild(title);
+    frag.appendChild(title);
 
     // Eruda（按需动态加载）
-    panelContent.appendChild(createItem('Eruda 调试台', 'screwdriver-wrench', function() {
+    frag.appendChild(createItem('Eruda 调试台', 'screwdriver-wrench', function() {
       closePanel();
       if (window.eruda && window.eruda._devTools) { eruda.destroy(); return; }
       if (window.eruda) { eruda.init(); return; }
@@ -245,13 +332,63 @@
     }));
 
     // 打开舞台
-    panelContent.appendChild(createItem('打开舞台', 'tv', function() {
+    frag.appendChild(createItem('打开舞台', 'tv', function() {
       closePanel();
       if (window.showStage) showStage();
     }));
 
+    // 导入作品
+    frag.appendChild(createItem('导入作品', 'folder-open', function() {
+      closePanel();
+      var input = document.getElementById('importFileInput');
+      if (!input) {
+        input = document.createElement('input');
+        input.type = 'file';
+        input.id = 'importFileInput';
+        input.accept = '.bcm,.json,.bnlink,.bn';
+        input.style.display = 'none';
+        input.addEventListener('change', function(e) {
+          var file = e.target.files[0];
+          if (!file) return;
+          input.value = '';
+          if (window.loadProjectFile) {
+            window.loadProjectFile(file, function(res) {
+              if (res.error) alert('导入失败：' + res.error);
+            });
+          }
+        });
+        document.body.appendChild(input);
+      }
+      input.click();
+    }));
+
+    // 最近作品
+    var recent = window.bnCache && window.bnCache.list();
+    if (recent && recent.length) {
+      var sep = document.createElement('div');
+      sep.className = 'menu-panel-title';
+      sep.textContent = '最近作品';
+      frag.appendChild(sep);
+      for (var i = 0; i < Math.min(recent.length, 5); i++) {
+        (function(entry) {
+          frag.appendChild(createItem(entry.name, 'history', function() {
+            closePanel();
+            if (entry.bcm && window.loadProjectJSON) {
+              window.loadProjectJSON(entry.bcm, true, function(res) {
+                if (res.error) alert('加载失败：' + res.error);
+              });
+            }
+          }));
+        })(recent[i]);
+      }
+      frag.appendChild(createItem('清除历史', 'trash-alt', function() {
+        closePanel();
+        if (window.bnCache) window.bnCache.clear();
+      }));
+    }
+
     // 刷新
-    panelContent.appendChild(createItem('刷新 Webview', 'sync-alt', function() {
+    frag.appendChild(createItem('刷新 Webview', 'sync-alt', function() {
       closePanel();
       location.reload();
     }));

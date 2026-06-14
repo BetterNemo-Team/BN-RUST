@@ -8,13 +8,16 @@
         "build": "tauri build",
         "preview": "tauri preview",
         "dev:frontend": "vite",
-        "build:frontend": "tsc && vite build"
+        "build:frontend": "tsc && vite build",
+    "build:wasm": "cd rust-renderer && wasm-pack build --target web --out-dir ../public/wasm"
     },
     "dependencies": {
-        "@tauri-apps/api": "^1.5.0"
+        "@tauri-apps/api": "^1.5.0",
+        "jszip": "^3.10.1"
     },
     "devDependencies": {
         "@tauri-apps/cli": "^1.5.0",
+        "@types/node": "^20.11.0",
         "typescript": "^5.4.5",
         "vite": "^5.2.8"
     }

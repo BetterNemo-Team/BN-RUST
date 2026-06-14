@@ -5,7 +5,10 @@
     BetterNemo.log("积木", "等待Workspace加载");
     await isBlocklyMainworkspaceLoaded();
     BetterNemo.log("积木", "积木注入开始");
-    Blockly.mainWorkspace.add_change_listener(() => {
+    var _blockDirty = false;
+    function _runBlockChecks() {
+        if (!_blockDirty) return;
+        _blockDirty = false;
         rootBlockChecks.forEach((check) => {
             checkRootBlock(check);
         });
@@ -53,6 +56,11 @@
             else if (block._color)
                 block.set_colour(block._color);
         });
+    }
+    Blockly.mainWorkspace.add_change_listener(function() {
+        if (_blockDirty) return;
+        _blockDirty = true;
+        requestAnimationFrame(_runBlockChecks);
     });
     (function regToolboxIcon() {
         document
