@@ -15,6 +15,9 @@ pub struct Renderer {
     bind_group_layout: BindGroupLayout,
     vertex_count: u32,
     clear_color: Color,
+    // 缓存的默认白色纹理（避免每帧创建）
+    default_tex: Texture,
+    default_tex_view: TextureView,
 }
 
 impl Renderer {
@@ -84,7 +87,26 @@ impl Renderer {
 
         let texture_manager = TextureManager::new(device.clone(), queue.clone());
 
-        Self { device, queue, surface, config, texture_manager, pipeline, sampler, sprite_buffer, bind_group_layout, vertex_count: 0, clear_color: Color { r: 0.0, g: 0.0, b: 0.0, a: 1.0 } }
+        // 创建默认白色纹理（只创建一次）
+        let default_tex = device.create_texture(&TextureDescriptor {
+            label: Some("default_white"),
+            size: Extent3d { width: 1, height: 1, depth_or_array_layers: 1 },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: TextureDimension::D2,
+            format: TextureFormat::Rgba8Unorm,
+            usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        queue.write_texture(
+            ImageCopyTexture { texture: &default_tex, mip_level: 0, origin: Origin3d::ZERO, aspect: TextureAspect::All },
+            &[255u8, 255, 255, 255],
+            ImageDataLayout { offset: 0, bytes_per_row: Some(4), rows_per_image: Some(1) },
+            Extent3d { width: 1, height: 1, depth_or_array_layers: 1 },
+        );
+        let default_tex_view = default_tex.create_view(&TextureViewDescriptor::default());
+
+        Self { device, queue, surface, config, texture_manager, pipeline, sampler, sprite_buffer, bind_group_layout, vertex_count: 0, clear_color: Color { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }, default_tex, default_tex_view }
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
@@ -136,30 +158,12 @@ impl Renderer {
         };
         let view = frame.texture.create_view(&TextureViewDescriptor::default());
 
-        // 创建默认纹理绑定组（白色 1x1 纹理）
-        let default_tex = self.device.create_texture(&TextureDescriptor {
-            label: Some("default_white"),
-            size: Extent3d { width: 1, height: 1, depth_or_array_layers: 1 },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: TextureDimension::D2,
-            format: TextureFormat::Rgba8Unorm,
-            usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
-            view_formats: &[],
-        });
-        self.queue.write_texture(
-            ImageCopyTexture { texture: &default_tex, mip_level: 0, origin: Origin3d::ZERO, aspect: TextureAspect::All },
-            &[255u8, 255, 255, 255],
-            ImageDataLayout { offset: 0, bytes_per_row: Some(4), rows_per_image: Some(1) },
-            Extent3d { width: 1, height: 1, depth_or_array_layers: 1 },
-        );
-        let tex_view = default_tex.create_view(&TextureViewDescriptor::default());
-
+        // 使用缓存的默认白色纹理
         let bind_group = self.device.create_bind_group(&BindGroupDescriptor {
             label: Some("sprite_bind_group"),
             layout: &self.bind_group_layout,
             entries: &[
-                BindGroupEntry { binding: 0, resource: BindingResource::TextureView(&tex_view) },
+                BindGroupEntry { binding: 0, resource: BindingResource::TextureView(&self.default_tex_view) },
                 BindGroupEntry { binding: 1, resource: BindingResource::Sampler(&self.sampler) },
             ],
         });

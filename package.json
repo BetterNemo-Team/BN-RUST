@@ -9,7 +9,8 @@
         "preview": "tauri preview",
         "dev:frontend": "vite",
         "build:frontend": "tsc && vite build",
-    "build:wasm": "cd rust-renderer && wasm-pack build --target web --out-dir ../public/wasm"
+    "build:wasm": "cd rust-renderer && $env:CARGO_TARGET_DIR='..\\target' cargo build --target wasm32-unknown-unknown && wasm-bindgen ..\\target\\wasm32-unknown-unknown\\debug\\bn_renderer.wasm --out-dir ..\\public\\wasm --target web",
+    "build:frontend:full": "npm run build:wasm && npm run build:frontend"
     },
     "dependencies": {
         "@tauri-apps/api": "^1.5.0",

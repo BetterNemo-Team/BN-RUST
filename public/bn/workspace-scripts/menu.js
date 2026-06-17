@@ -320,6 +320,12 @@
     title.textContent = '更多';
     frag.appendChild(title);
 
+    // 角色外观编辑器
+    frag.appendChild(createItem('角色外观', 'palette', function() {
+      closePanel();
+      openCostumeEditor();
+    }));
+
     // Eruda（按需动态加载）
     frag.appendChild(createItem('Eruda 调试台', 'screwdriver-wrench', function() {
       closePanel();
@@ -422,5 +428,155 @@
     toggle.appendChild(slider);
     el.appendChild(toggle);
     return el;
+  }
+
+  // 角色外观编辑器
+  function openCostumeEditor() {
+    var dialog = document.getElementById('settingsDialog');
+    var content = dialog.querySelector('.settings-content');
+    if (!dialog || !content) return;
+
+    content.innerHTML = '';
+    var header = document.createElement('div');
+    header.className = 'settings-dialog-header';
+    header.innerHTML = '<span>角色外观</span>';
+    content.appendChild(header);
+
+    var body = document.createElement('div');
+    body.className = 'settings-body';
+
+    // 获取当前 BCM 数据
+    var bcm = window.getCurrentBCM && window.getCurrentBCM();
+    if (!bcm || !bcm.theatre || !bcm.theatre.actors) {
+      body.innerHTML = '<p style="color:#999">请先打开一个作品</p>';
+      content.appendChild(body);
+      dialog.open = true;
+      return;
+    }
+
+    var actors = bcm.theatre.actors;
+    var actorIds = Object.keys(actors);
+    var styles = bcm.theatre.styles || {};
+
+    // 角色选择
+    var actorTitle = document.createElement('h3');
+    actorTitle.className = 'settings-section-title';
+    actorTitle.textContent = '选择角色';
+    body.appendChild(actorTitle);
+
+    var actorSelect = document.createElement('select');
+    actorSelect.className = 'settings-select';
+    actorSelect.style.width = '100%';
+    actorIds.forEach(function(id) {
+      var opt = document.createElement('option');
+      opt.value = id;
+      opt.textContent = actors[id].name || id.substring(0, 8);
+      actorSelect.appendChild(opt);
+    });
+    body.appendChild(actorSelect);
+
+    // 造型展示区
+    var costumeTitle = document.createElement('h3');
+    costumeTitle.className = 'settings-section-title';
+    costumeTitle.textContent = '造型列表';
+    body.appendChild(costumeTitle);
+
+    var costumeGrid = document.createElement('div');
+    costumeGrid.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;';
+    body.appendChild(costumeGrid);
+
+    function renderCostumes(actorId) {
+      costumeGrid.innerHTML = '';
+      var actor = actors[actorId];
+      if (!actor || !actor.styles) return;
+
+      actor.styles.forEach(function(styleId) {
+        var style = styles[styleId];
+        if (!style) return;
+
+        var card = document.createElement('div');
+        card.style.cssText = 'width:80px;text-align:center;cursor:pointer;border:2px solid transparent;border-radius:6px;padding:4px;transition:border-color 0.15s;';
+        if (styleId === actor.current_style_id) {
+          card.style.borderColor = '#4CAF50';
+        }
+
+        var img = document.createElement('img');
+        img.style.cssText = 'width:60px;height:60px;object-fit:contain;border-radius:4px;background:#222;';
+        if (style.url && style.url.startsWith('data:')) {
+          img.src = style.url;
+        } else if (style.path) {
+          img.src = style.path;
+        }
+        card.appendChild(img);
+
+        var label = document.createElement('div');
+        label.style.cssText = 'font-size:11px;color:#999;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+        label.textContent = style.name || styleId.substring(0, 8);
+        card.appendChild(label);
+
+        card.onclick = function() {
+          actor.current_style_id = styleId;
+          // 通知运行时更新
+          try {
+            var mgr = get_run_mgr();
+            if (mgr) {
+              window.postMsg('SCENE_SET_PROPERTY', JSON.stringify({
+                property_name: 'current_style_id',
+                scene_id: actor.scene_id,
+                value: styleId
+              }));
+            }
+          } catch(e) {}
+          renderCostumes(actorId);
+        };
+
+        costumeGrid.appendChild(card);
+      });
+    }
+
+    actorSelect.onchange = function() {
+      renderCostumes(this.value);
+    };
+    renderCostumes(actorIds[0]);
+
+    // 上传新造型
+    var uploadTitle = document.createElement('h3');
+    uploadTitle.className = 'settings-section-title';
+    uploadTitle.textContent = '上传新造型';
+    body.appendChild(uploadTitle);
+
+    var uploadBtn = document.createElement('button');
+    uploadBtn.className = 'settings-apply-btn';
+    uploadBtn.textContent = '选择图片文件';
+    uploadBtn.onclick = function() {
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = function() {
+        var file = input.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var dataUrl = e.target.result;
+          var newStyleId = 'style_' + Date.now();
+          var newStyle = {
+            name: file.name.replace(/\.[^.]+$/, ''),
+            url: dataUrl
+          };
+          styles[newStyleId] = newStyle;
+          var actorId = actorSelect.value;
+          if (actors[actorId]) {
+            actors[actorId].styles.push(newStyleId);
+          }
+          renderCostumes(actorId);
+        };
+        reader.readAsDataURL(file);
+      };
+      input.click();
+    };
+    body.appendChild(uploadBtn);
+
+    content.appendChild(body);
+    dialog.open = true;
   }
 })();

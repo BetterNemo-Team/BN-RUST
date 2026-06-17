@@ -174,10 +174,27 @@
   bridge.getMode = function() { return currentMode; };
 
   // ---------- 自动初始化 ----------
+  var tryInit = function() {
+    if (window.__pixiProxy) { bridge.init(); return true; }
+    return false;
+  };
+  var startInit = function() {
+    // 延迟确保 pixi-proxy.js 已执行
+    setTimeout(function() {
+      if (!tryInit()) {
+        // fallback：轮询等待 __pixiProxy
+        var poll = setInterval(function() {
+          if (tryInit()) clearInterval(poll);
+        }, 100);
+        setTimeout(function() { clearInterval(poll); }, 15000);
+      }
+    }, 50);
+  };
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() { bridge.init(); });
+    document.addEventListener('DOMContentLoaded', startInit);
   } else {
-    setTimeout(function() { bridge.init(); }, 3000);
+    // readyState === 'interactive' | 'complete'
+    startInit();
   }
 
   window.__renderBridge = bridge;

@@ -32,24 +32,32 @@
     }
   }
 
+  // 保存原始桥接函数引用（在 utils.js 劫持之前）
+  var _origDsafPostMsg = window._dsaf && window._dsaf.postMessageAsyn;
+  var _origDsfPostMsg = window._dsf && window._dsf.postMessage;
+
   function emitToParent(payload) {
     if (window.parent && window.parent !== window) {
       window.parent.postMessage({ [BRIDGE_FLAG]: true, ...payload }, '*');
     } else {
-      // 桌面端：将 webview->host 转为 native->webview，模拟 native 回调
-      handleHostMessage({
-        [BRIDGE_FLAG]: true,
-        direction: 'native->webview',
-        api: payload.api,
-        args: payload.args,
-      });
+      // 桌面端：直接路由到桥接 API，不经过 handleHostMessage（避免递归）
+      if (payload.api === '_dsaf.postMessageAsyn') {
+        window._dsaf.postMessageAsyn(...payload.args);
+      } else if (payload.api === '_dsf.postMessage') {
+        window._dsf.postMessage(...payload.args);
+      }
     }
   }
 
   if (!window._dsf) {
     console.log('iframe环境：模拟原生APP注入 _dsf');
     window._dsf = {
+      _obs: {},
       postMessage: function (type, data) {
+        // 桌面端：检查是否有注册的同步处理器
+        if (typeof window._dsf[type] === 'function') {
+          return window._dsf[type](data);
+        }
         const parsed = tryParseJSON(data);
         console.log('[Webview -> Host][_dsf.postMessage]', type, parsed);
         emitToParent({
@@ -67,24 +75,22 @@
   if (!window._dsaf) {
     console.log('iframe环境：模拟原生APP注入 _dsaf');
     window._dsaf = {
+      _obs: {},
       postMessageAsyn: function (type, data, callback) {
-        const parsed = tryParseJSON(data);
-        console.log('[Webview -> Host][_dsaf.postMessageAsyn]', type, parsed);
-
-        const cbId = typeof callback === 'function' ? nextRequestId() : null;
-        if (cbId) {
-          pendingCallbacks.set(cbId, callback);
+        // 桌面端：检查桥接层注册的处理器
+        if (typeof window._dsaf['postMessageAsyn'] === 'function' && window._dsaf['postMessageAsyn'] !== window._dsaf.postMessageAsyn) {
+          return window._dsaf['postMessageAsyn'](type, data, callback);
         }
-
+        console.log('[Webview -> Host][_dsaf.postMessageAsyn]', type);
+        const cbId = typeof callback === 'function' ? nextRequestId() : null;
+        if (cbId) { pendingCallbacks.set(cbId, callback); }
         emitToParent({
           direction: 'webview->host',
           api: '_dsaf.postMessageAsyn',
           args: [type, data],
           callbackId: cbId,
           type,
-          payload: parsed,
         });
-
         return '';
       },
     };

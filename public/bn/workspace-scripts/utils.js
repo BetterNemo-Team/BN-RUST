@@ -964,26 +964,6 @@ async function showExtensionShop(disabled = [], callback) {
         data: [...args]
       }));
     }
-    // 桌面端：直接路由 LOAD_BCM 到 React 应用
-    if (args[0] === 'LOAD_BCM') {
-      var bcmData = typeof args[1] === 'string' ? JSON.parse(args[1]) : args[1];
-      console.log('[Desktop] LOAD_BCM 直接路由, actors:', Object.keys(bcmData.actors?.actors_dict || {}));
-      function tryDispatch(attempt) {
-        var redux = window.HookRedux;
-        var store = redux && (redux.NemoStore || redux.default || redux);
-        if (store && typeof store.dispatch === 'function') {
-          store.dispatch({ type: 'LOAD_BCM', payload: bcmData });
-          console.log('[Desktop] LOAD_BCM 已 dispatch 到 Redux store (attempt ' + attempt + ')');
-        } else if (attempt < 10) {
-          console.warn('[Desktop] Redux store 不可用, 重试 #' + (attempt + 1));
-          setTimeout(function() { tryDispatch(attempt + 1); }, 500);
-        } else {
-          console.error('[Desktop] Redux store 始终不可用');
-        }
-      }
-      tryDispatch(1);
-      return;
-    }
     return postMessageAsyn.apply(_dsaf, args);
   };
   window['postMsgAsyn'] = _dsaf.postMessageAsyn;
@@ -1373,11 +1353,13 @@ function convertCodeMaoBcm(json) {
     project_name: json.project_name || '未命名',
     app_version: json.application_version || '0.16.2',
     stage_size: { width: json.width || 480, height: json.height || 360 },
-    actors: { actors_dict: actors },
-    scenes: { scenes_dict: scenes },
+    actors: { actors_dict: actors, current_actor: '' },
+    scenes: { scenes_dict: scenes, scenes_order: Object.keys(scenes), current_scene: '' },
     styles: { styles_dict: styles },
-    variables: json.variables || {},
-    lists: json.lists || {}
+    variable: { variable_dict: json.variables || {} },
+    lists: json.lists || {},
+    audio: json.audio || {},
+    audio_order: json.audio_order || []
   };
 }
 function loadProjectJSON(json, fromCache, callback) {
@@ -1507,3 +1489,54 @@ if (isPCTestEnv() && false)
     // const dom = Blockly.xml.text_to_dom(`<xml xmlns="http://www.w3.org/1999/xhtml"><block type="on_running_group_activated" id="04uXGGBRyb1fiHNv4ZEV" visible="visible" inline="true" x="274" y="150"><next><block type="controls_if" id="OMhlUo7LDMKfaG1uAPDY" visible="visible" inline="true"><value name="IF0"><empty type="logic_empty" id="XdvwIrtTA4hpcIkEKxWw" visible="visible" editable="false"></empty></value><next><block type="controls_if" id="u5muWCDG5AFoc2iawJrX" visible="visible" inline="true"><value name="IF0"><empty type="logic_empty" id="xoUgG0RPI17tsAmUwI72" visible="visible" editable="false"></empty></value><next last_next_in_stack="true"></next></block></next></block></next></block></xml>`);
     // Blockly.xml.dom_to_workspace(dom, Blockly.mainWorkspace);
   })();
+
+// ─── 导入测试 API（控制台调用） ───
+window.testImport = {
+  minimal() {
+    var bcm = {
+      project_name: '测试导入', width: 480, height: 360,
+      application_version: '0.16.2',
+      theatre: {
+        actors: { 'test-actor-1': { name: '小猫', x: 0, y: 0, scale: 100, rotation: 0, visible: true, current_style_id: 'test-style-1', blocksXML: '' } },
+        scenes: { 'test-scene-1': { name: '舞台', actors: ['test-actor-1'], blocksXML: '' } },
+        styles: { 'test-style-1': { name: '造型1', url: '', width: 100, height: 100 } }
+      },
+      variables: {}, lists: {}
+    };
+    loadProjectJSON(bcm, false, function(r) { console.log('[TestImport] 结果:', r); });
+    return bcm;
+  },
+  withBlocks() {
+    var bcm = {
+      project_name: '积木测试', width: 480, height: 360,
+      application_version: '0.16.2',
+      theatre: {
+        actors: { 'block-actor-1': {
+          name: '角色A', x: 50, y: 50, scale: 80, rotation: 0, visible: true, current_style_id: 'block-style-1',
+          blocksXML: '<xml xmlns="http://www.w3.org/1999/xhtml"><block type="on_start" id="b1" x="100" y="100"><next><block type="event_say" id="b2"><value name="WORDS"><shadow type="text" id="b3"><field name="TEXT">你好!</field></shadow></value></block></next></block></xml>'
+        }},
+        scenes: { 'block-scene-1': { name: '主场景', actors: ['block-actor-1'], blocksXML: '' } },
+        styles: { 'block-style-1': { name: '猫', url: '', width: 100, height: 100 } }
+      },
+      variables: { 'var1': { name: '计数器', value: 0 } }, lists: {}
+    };
+    loadProjectJSON(bcm, false, function(r) { console.log('[TestImport] 结果:', r); });
+    return bcm;
+  },
+  fromFile(json) {
+    loadProjectJSON(json, false, function(r) { console.log('[TestImport] 结果:', r); });
+  },
+  status() {
+    var ws = typeof Blockly !== 'undefined' ? Blockly.mainWorkspace : null;
+    return {
+      loadProjectJSON: typeof window.loadProjectJSON === 'function',
+      postMsg: typeof window.postMsg === 'function',
+      postMsgAsyn: typeof window.postMsgAsyn === 'function',
+      runMgr: typeof get_run_mgr === 'function' ? !!get_run_mgr() : false,
+      workspace: !!ws,
+      blocks: ws ? ws.getAllBlocks(false).length : 0,
+      _dsaf_handler: window._dsaf ? String(window._dsaf.postMessageAsyn).substring(0, 60) : 'undefined'
+    };
+  }
+};
+console.log('[BetterNemo] testImport API 已加载 — testImport.minimal() / testImport.withBlocks() / testImport.status()');

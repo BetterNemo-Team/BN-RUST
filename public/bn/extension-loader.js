@@ -171,6 +171,29 @@ let themeMetaData = {};
         loadScript('https://db0l8fnn8oqtof.database.nocode.cn/storage/v1/object/public/wenjian/anonymous/177220279682_q1jamqn6clr.js');
       else loadScript('workspace.bundle.106e91c62fadbbb3c3b7.js').then(function() {
         console.log('[Stage:ext-loader] workspace.bundle 加载完成');
+        // workspace.bundle 加载后，dsbridge 注册了新的处理器
+        // 重新绑定 window.postMsg/postMsgAsyn 指向最新的处理器
+        // 原版由 native 端做 JSON.parse，桌面端需要手动解析
+        if (window._dsf && typeof window._dsf.postMessage === 'function') {
+          var origSync = window._dsf.postMessage;
+          window.postMsg = function(type, data) {
+            if (typeof data === 'string') {
+              try { data = JSON.parse(data); } catch(e) {}
+            }
+            return origSync(type, data);
+          };
+          console.log('[Stage:ext-loader] window.postMsg 已重新绑定');
+        }
+        if (window._dsaf && typeof window._dsaf.postMessageAsyn === 'function') {
+          var origAsync = window._dsaf.postMessageAsyn;
+          window.postMsgAsyn = function(type, data, callback) {
+            if (typeof data === 'string') {
+              try { data = JSON.parse(data); } catch(e) {}
+            }
+            return origAsync(type, data, callback);
+          };
+          console.log('[Stage:ext-loader] window.postMsgAsyn 已重新绑定');
+        }
       }).catch(function(e) {
         console.error('[Stage:ext-loader] workspace.bundle 加载失败:', e);
       });
@@ -188,6 +211,7 @@ let themeMetaData = {};
     stageOnly ? Promise.resolve() : loadScript('workspace-scripts/menu.js'),
     stageOnly ? Promise.resolve() : loadScript('workspace-scripts/settings.js'),
     loadScript('workspace-scripts/bn-format.js'),
+    stageOnly ? Promise.resolve() : loadScript('workspace-scripts/dev-panel.js'),
     loadScript('render-bridge/pixi-proxy.js'),
     loadScript('render-bridge/data-serializer.js'),
     loadScript('render-bridge/texture-manager.js'),
@@ -430,7 +454,8 @@ let themeMetaData = {};
       "data": "{\"type\":\"SHOW_TOAST\",\"payload\":{\"text\":\"网络异常，无法获取当前云变量的值111\"}}"
     },
     "callbackId": null
-  }, '*');
+   }, '*');
    */
 })();
+function getBrowserVersion() { return parseInt((new UAParser()).getResult().browser.version); }
 

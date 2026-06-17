@@ -1,0 +1,18 @@
+{
+  "id": "bnonline-info",
+  "name": "BNOnline",
+  "version": "1.0.0",
+  "description": "BNOnline辅助扩展",
+  "author": "BNOnline",
+  "main": "index.js",
+  "icon": "icon-bnonline",
+  "capabilities": {
+    "blocks": false,
+    "toolbox": true,
+    "interpreter": false,
+    "events": true,
+    "ui": true
+  },
+  "permissions": ["storage", "events"],
+  "minVersion": "0.1.0"
+}

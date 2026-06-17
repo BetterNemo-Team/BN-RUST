@@ -1,0 +1,17 @@
+{
+  "id": "example-v2",
+  "name": "示例扩展 V2",
+  "version": "1.0.0",
+  "description": "展示 .bnex 压缩包扩展格式",
+  "author": "BetterNemo",
+  "main": "index.js",
+  "icon": "icon-example",
+  "capabilities": {
+    "blocks": true,
+    "toolbox": true,
+    "interpreter": true,
+    "events": true
+  },
+  "permissions": ["storage", "events"],
+  "minVersion": "0.1.0"
+}
